@@ -1,6 +1,6 @@
 # BARE-RB
 
-WIP Implementation of the BARE message protocl in Ruby
+WIP Implementation of the BARE message protocol in Ruby
 
 Bare spec:
 
