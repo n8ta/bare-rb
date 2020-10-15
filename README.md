@@ -11,8 +11,6 @@ https://baremessages.org
 1. int
 2. f32, f64
 3. string,
-4. data[length]
-5. data
 6. void
 7. optional
 8. variable length array
@@ -29,3 +27,5 @@ https://baremessages.org
 4. enum
 5. fix length array
 6. suitable encode/decode framework
+7. data[length]
+8. data
