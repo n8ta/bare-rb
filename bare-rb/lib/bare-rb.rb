@@ -1,3 +1,5 @@
+require 'set'
+
 class Bare
   def self.encode(msg, schema)
     return schema.encode(msg)
@@ -15,7 +17,7 @@ class Bare
           bytes << byte
         end
         (bytes.size - 1).downto(0) do |i|
-          if bytes.bytes[i] == 128
+          if bytes.bytes[i] == 128 && bytes.size > 1
             bytes = bytes.chop
           else
             break
@@ -24,6 +26,7 @@ class Bare
         bytes[bytes.size - 1] = [bytes.bytes[bytes.size - 1] & 127].pack('C')[0]
         return bytes
       end
+
       def decode(msg)
         ints = msg.unpack("C*")
         relevantInts = []
@@ -45,6 +48,7 @@ class Bare
       def encode(msg)
         return [msg].pack("C")
       end
+
       def decode(msg)
         return {value: msg[0].unpack("C")[0], rest: msg[1..msg.size]}
       end
@@ -54,6 +58,7 @@ class Bare
       def encode(msg)
         return [msg].pack("v")
       end
+
       def decode(msg)
         return {value: msg.unpack("v")[0], rest: msg[2..msg.size]}
       end
@@ -63,6 +68,7 @@ class Bare
       def encode(msg)
         return [msg].pack("V")
       end
+
       def decode(msg)
         return {value: msg.unpack("V")[0], rest: msg[4..msg.size]}
       end
@@ -72,6 +78,7 @@ class Bare
       def encode(msg)
         return [msg].pack("Q")
       end
+
       def decode(msg)
         return {value: msg.unpack("Q")[0], rest: [8..msg.size]}
       end
@@ -81,6 +88,7 @@ class Bare
       def encode(msg)
         return [msg].pack("c")
       end
+
       def decode(msg)
         return {value: msg[0].unpack("c")[0], rest: msg[1..msg.size]}
       end
@@ -90,6 +98,7 @@ class Bare
       def encode(msg)
         return [msg].pack("s<")
       end
+
       def decode(msg)
         return {value: msg.unpack('s<')[0], rest: msg[2..msg.size]}
       end
@@ -99,6 +108,7 @@ class Bare
       def encode(msg)
         return [msg].pack("l<")
       end
+
       def decode(msg)
         return {value: msg.unpack('l<')[0], rest: msg[4..msg.size]}
       end
@@ -108,6 +118,7 @@ class Bare
       def encode(msg)
         return [msg].pack("q<")
       end
+
       def decode(msg)
         return {value: msg.unpack('q<')[0], rest: msg[8..msg.size]}
       end
@@ -117,6 +128,7 @@ class Bare
       def encode(msg)
         return msg ? "\xFF\xFF".b : "\x00\x00".b
       end
+
       def decode(msg)
         return {value: msg == "\x00\x00" ? false : true, rest: msg[1..msg.size]}
       end
@@ -126,9 +138,11 @@ class Bare
       def initialize(type, size)
         @type = type
         @size = size
+        raise("FixedLenArray size must be > 0") if size < 1
       end
 
       def encode(arr)
+        raise("This FixLenArray is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
         bytes = ""
         arr.each do |item|
           bytes << @type.encode(item)
@@ -148,18 +162,54 @@ class Bare
       end
     end
 
-  end
-  end
-
-  def get_next_7_bits_as_byte(integer, base = 128)
-    # Base is the initial value of the byte before
-    # before |'ing it with 7bits from the integer
-    groups_of_7 = (integer.size * 8) / 7 + (integer.size % 7 == 0 ? 0 : 1)
-    0.upto(groups_of_7 - 1) do |group_number|
-      byte = base
-      0.upto(7).each do |bit_number|
-        byte = byte | (integer[group_number * 7 + bit_number] << bit_number)
+    class Enum
+      def initialize(source)
+        @intToVal = {}
+        @valToInt = {}
+        if source.is_a?(Array)
+          source.each_with_index do |item, i|
+            @intToVal[i] = item
+            @valToInt[item] = i
+          end
+        elsif source.is_a?(Hash)
+          raise("Enum must have unique positive integer assignments") if Set.new(source.keys).size != source.keys.size
+          raise("Enum must have unique values") if source.values.to_set.size != source.values.size
+          source.each do |k, v|
+            @intToVal[k.to_i] = v
+            @valToInt[v] = k.to_i
+            raise("Enum keys must be positive integers") if k < 0
+          end
+        else
+          raise("Enum must be initialized with an array of symbols or a hashmap from unsigned integer to symbol")
+        end
       end
-      yield(byte)
+
+      def encode(msg)
+        raise("#{msg.inspect} is not part of your enum") if !@valToInt.keys.include?(msg)
+        integerRep = @valToInt[msg]
+        encoded = Bare::DataTypes::Uint.new.encode(integerRep)
+        return encoded
+      end
+
+      def decode(msg)
+        output = Bare::DataTypes::Uint.new.decode(msg)
+        value = output[:value]
+        rest = output[:rest]
+        return {value: @intToVal[value], rest: rest}
+      end
     end
   end
+end
+
+def get_next_7_bits_as_byte(integer, base = 128)
+  # Base is the initial value of the byte before
+  # before |'ing it with 7bits from the integer
+  groups_of_7 = (integer.size * 8) / 7 + (integer.size % 7 == 0 ? 0 : 1)
+  0.upto(groups_of_7 - 1) do |group_number|
+    byte = base
+    0.upto(7).each do |bit_number|
+      byte = byte | (integer[group_number * 7 + bit_number] << bit_number)
+    end
+    yield(byte)
+  end
+end
