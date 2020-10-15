@@ -1,5 +1,4 @@
 class Bare
-
   def self.encode(msg, schema)
     case schema
     when Bare::DataTypes::U8
@@ -40,26 +39,30 @@ class Bare
   end
 
   def self.decode(msg, schema)
-    case schema
+    result = self._parser(msg, schema)
+    return result[:value]
+  end
 
+  def self._parser(msg, schema, rest=nil)
+    case schema
     when Bare::DataTypes::U8
-      return msg[0].unpack("C")[0]
+      return {value: msg[0].unpack("C")[0], rest: nil}
     when Bare::DataTypes::U16
-      return msg.unpack("v")[0]
+      return {value: msg.unpack("v")[0], rest: nil}
     when Bare::DataTypes::U32
-      return msg.unpack("V")[0]
+      return {value: msg.unpack("V")[0], rest: nil}
     when Bare::DataTypes::U64
-      return msg.unpack("Q")[0]
+      return {value: msg.unpack("Q")[0], rest: nil}
     when Bare::DataTypes::I8
-      return msg[0].unpack("c")[0]
+      return {value: msg[0].unpack("c")[0], rest: nil}
     when Bare::DataTypes::I16
-      return msg.unpack('s<')[0]
+      return {value: msg.unpack('s<')[0], rest: nil}
     when Bare::DataTypes::I32
-      return msg.unpack('l<')[0]
+      return {value: msg.unpack('l<')[0], rest: nil}
     when Bare::DataTypes::I64
-      return msg.unpack('q<')[0]
+      return {value: msg.unpack('q<')[0], rest: nil}
     when Bare::DataTypes::Bool
-      return msg == "\x00\x00" ? false : true
+      return {value: msg == "\x00\x00" ? false : true, rest: nil}
     when Bare::DataTypes::Uint
       ints = msg.unpack("C*")
       relevantInts = []
@@ -69,12 +72,11 @@ class Bare
         i += 1
       end
       relevantInts << ints[i]
-
       sum = 0
       relevantInts.each_with_index do |int, idx|
         sum += int << (idx * 7)
       end
-      return sum
+      return {value: sum, rest: msg[(i+1)..msg.size] }
     else
       raise("Unknown type found in schema: #{schema}")
     end
@@ -110,6 +112,13 @@ class Bare
 
     class Bool
     end
+
+    class Array
+      def initialize(type)
+        @type = type
+      end
+    end
+
   end
 end
 
