@@ -14,8 +14,7 @@ https://baremessages.org
 4. void
 5. optional
 6. map
-7. struct
-8. **Lexer and Parser**
+7. **Lexer and Parser**
 
 # Done List
 0. uint
@@ -29,4 +28,5 @@ https://baremessages.org
 8. data
 9. variable length array
 10. union
+11. struct
 
