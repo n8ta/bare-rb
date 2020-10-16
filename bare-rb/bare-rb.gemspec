@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.description = "Implements the bare message encoding and DSL in ruby"
   s.authors     = ["Nate Tracy-Amoroso"]
   s.email       = 'n8@u.northwestern.edu'
-  s.files       = ["./lib/bare-rb.rb"]
+  s.files       = ["./lib/bare-rb.rb", "./lib/types.rb"]
   s.homepage    = 'https://none.none'
   s.license       = 'MIT'
 end
