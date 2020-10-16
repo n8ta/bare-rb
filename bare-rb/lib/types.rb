@@ -3,6 +3,8 @@ class BareTypes
   class BaseType
   end
 
+
+
   class BarePrimitive < BaseType
     # Types which are always equivalent to another instantiation of themselves
     # Eg. Uint.new == Uint.new
@@ -13,9 +15,23 @@ class BareTypes
     end
   end
 
+  class Void < BarePrimitive
+    def encode(msg)
+      return "".b
+    end
+    def decode(msg)
+      return {value: nil, rest: msg}
+    end
+  end
+
   class String < BarePrimitive
     def encode(msg)
-      encodedString = msg.force_encoding("utf-8").b
+      encodedString = nil
+      begin
+        encodedString = msg.encode("UTF-8").b
+      rescue Encoding::UndefinedConversionError
+        raise("Unable to convert string to UTF-8, BARE strings must be UTF-8")
+      end
       bytes = Uint.new.encode(encodedString.size)
       bytes << encodedString
       return bytes
@@ -38,6 +54,7 @@ class BareTypes
     end
 
     def initialize(optionalType)
+      raise("Void types may only be used as members of the set of types in a tagged union.") if optionalType.class == BareTypes::Void
       @optionalType = optionalType
     end
 
@@ -66,6 +83,7 @@ class BareTypes
     end
 
     def initialize(fromType, toType)
+      raise("Void types may only be used as members of the set of types in a tagged union.") if fromType.class == BareTypes::Void or toType.class == BareTypes::Void
       raise("Map keys must use a primitive type which is not data or data<length>.") if !fromType.class.ancestors.include?(BarePrimitive) || fromType.is_a?(BareTypes::Data) || fromType.is_a?(BareTypes::DataFixedLen)
       @from = fromType
       @to = toType
@@ -332,6 +350,7 @@ class BareTypes
       symbolToType.keys.each do |k|
         raise("Struct keys must be symbols") unless k.is_a?(Symbol)
         raise("Struct values must be a BareTypes::TYPE\nInstead got: #{symbolToType[k].inspect}") unless symbolToType[k].class.ancestors.include?(BaseType)
+        raise("Void types may only be used as members of the set of types in a tagged union.") if symbolToType.class == BareTypes::Void
       end
       raise("Struct must have at least one field") if symbolToType.keys.size == 0
       @mapping = symbolToType
@@ -368,6 +387,7 @@ class BareTypes
     end
 
     def initialize(type)
+      raise("Void types may only be used as members of the set of types in a tagged union.") if type.class == BareTypes::Void
       @type = type
     end
 
@@ -402,6 +422,7 @@ class BareTypes
     def initialize(type, size)
       @type = type
       @size = size
+      raise("Void types may only be used as members of the set of types in a tagged union.") if type.class == BareTypes::Void
       raise("FixedLenArray size must be > 0") if size < 1
     end
 

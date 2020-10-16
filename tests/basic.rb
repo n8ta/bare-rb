@@ -130,6 +130,10 @@ encode_decode_tests = [
     [{preInt: 4, str: "😊ABC😊", postInt: 5}, "\x04\x0B\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A\x05".b, Bare.Struct({preInt: Bare.U8, :str => Bare.String, postInt: Bare.U8 })],
     [{preInt: 4, str: " 😊ABC😊 ", postInt: 5}, "\x04\x0D\x20\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A\x20\x05".b, Bare.Struct({preInt: Bare.U8, :str => Bare.String, postInt: Bare.U8 })],
 
+    [{type: Bare.Void}, "\x01".b, Bare.Union({0 => Bare.Uint, 1 => Bare.Void})],
+    [{type: Bare.Uint, value: 5}, "\x00\x05".b, Bare.Union({0 => Bare.Uint, 1 => Bare.Void})],
+
+
 ]
 
 decode_tests = [

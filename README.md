@@ -23,9 +23,8 @@ Bare.decode(output, schema)
 0. proper errors
 1. int
 2. f32, f64
-3. void
-4. Docs for each non primitive type
-5. **Lexer and Parser**
+3. Docs for each non primitive type
+4. **Lexer and Parser**
 
 # Done List
 0. uint
@@ -43,4 +42,6 @@ Bare.decode(output, schema)
 12. map
 13. optional
 14. string
+15. void
+
 
