@@ -1,10 +1,14 @@
 # BARE-RB
 
-WIP Implementation of the BARE message protocol in Ruby
+Implementation of the [Bare message protocol](https://baremessages.org/) in Ruby
 
-Bare spec:
+BARE is a simple efficient binary encoding. It's primary advantage over json
+ is it's structure nature and smaller messages size. Messages are smaller because they do not describe themselves (no key names). 
+ This means the same message schema must be present on the sender and receiver.  
 
-https://baremessages.org
+This implementation is complete but hasn't be rigorously tested for compatibility with another implementation. Please file an issue here on github if you find a bug.
+Feel free to submit a PR with your own fixes or improvements, just be sure to run the tests.
+
 
 # Example
 ```ruby
