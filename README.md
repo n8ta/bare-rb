@@ -6,6 +6,17 @@ Bare spec:
 
 https://baremessages.org
 
+
+# Example
+```ruby
+schema = Bare.Array(Bare.U8) # Array of unsigned 1 byte integers
+output = Bare.encode([1,2,3,4], schema)
+puts output.inspect
+=> "\x04\x01\x02\x03\x04".b
+Bare.decode(output, schema) # You must know what schema was used to encdoe data to decode it
+=> [1,2,3,4]
+```
+
 # Todo List
 0. proper errors
 1. int
