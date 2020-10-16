@@ -13,6 +13,21 @@ class BareTypes
     end
   end
 
+  class String < BarePrimitive
+    def encode(msg)
+      encodedString = msg.force_encoding("utf-8").b
+      bytes = Uint.new.encode(encodedString.size)
+      bytes << encodedString
+      return bytes
+    end
+    def decode(msg)
+      output = Uint.new.decode(msg)
+      strLen = output[:value]
+      string = output[:rest][0..strLen-1]
+      return {value: string.force_encoding("utf-8"), rest: output[:rest][strLen..output[:rest].size] }
+    end
+  end
+
   class Optional < BaseType
     def ==(otherType)
       return otherType.class == BareTypes::Optional && otherType.optionalType == @optionalType

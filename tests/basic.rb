@@ -123,6 +123,13 @@ encode_decode_tests = [
     [{preInt: 4, opt: nil, postInt: 5}, "\x04\x00\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8 })],
     [{preInt: 4, opt: 9, postInt: 5}, "\x04\xFF\x09\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8 })],
 
+    ["ABC", "\x03\x41\x42\x43".b, Bare.String],
+    ["A C", "\x03\x41\x20\x43".b, Bare.String],
+    ["😊", "\x04\xF0\x9F\x98\x8A".b, Bare.String],
+    ["😊ABC😊", "\x0B\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A".b, Bare.String],
+    [{preInt: 4, str: "😊ABC😊", postInt: 5}, "\x04\x0B\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A\x05".b, Bare.Struct({preInt: Bare.U8, :str => Bare.String, postInt: Bare.U8 })],
+    [{preInt: 4, str: " 😊ABC😊 ", postInt: 5}, "\x04\x0D\x20\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A\x20\x05".b, Bare.Struct({preInt: Bare.U8, :str => Bare.String, postInt: Bare.U8 })],
+
 ]
 
 decode_tests = [
@@ -138,7 +145,6 @@ encode_decode_tests.each_with_index do |sample, i|
       raise "\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed\nreal output: #{output.inspect} \ndoesn't match expected output: #{sample[1].inspect}"
     end
     decoded = Bare.decode(output, sample[2])
-    #noinspection RubyScope
     if decoded.is_a?(Hash)
       decoded.keys.each do |key|
         decodedVal = decoded[key]

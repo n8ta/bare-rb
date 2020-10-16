@@ -10,6 +10,12 @@ class Bare
     return schema.decode(msg)[:value]
   end
 
+  # These classes are wrapped in methods for ergonomics.
+  # Isn't Bare.Array(Bare.U8) nicer than Bare::Array.new(Bare::U8.new)?
+
+  def self.String
+    return BareTypes::String.new
+  end
   def self.U8
     return BareTypes::U8.new
   end

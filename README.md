@@ -25,7 +25,8 @@ Bare.decode(output, schema)
 2. f32, f64
 3. string,
 4. void
-5. **Lexer and Parser**
+5. Docs for each non primitive type
+6. **Lexer and Parser**
 
 # Done List
 0. uint
