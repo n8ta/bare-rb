@@ -3,7 +3,7 @@
 Implementation of the [Bare message protocol](https://baremessages.org/) in Ruby
 
 BARE is a simple efficient binary encoding. It's primary advantage over json
- is it's structure nature and smaller messages size. Messages are smaller because they do not describe themselves (no key names). 
+ is it's structured nature and smaller messages sizes. Messages are smaller because they do not describe themselves (no key names). 
  This means the same message schema must be present on the sender and receiver.  
 
 This implementation is complete but hasn't be rigorously tested for compatibility with another implementation. Please file an issue here on github if you find a bug.
@@ -35,7 +35,8 @@ Bare.decode(output, schema)
 10. [data](data)
 11. [void](void)
 12. [optional](optional<type>)
-13. [fixed-length-array](array<type>[length](14. [array](array<type>)
+13. [fixed-length-array](array<type>)
+14. [array](array<type>)
 15. [map](map<type> -> <type>)
 16. [union](union<typea | typeb | typec>)
 17. [struct](struct)
@@ -190,7 +191,7 @@ Bare.decode(output, schema)
 => nil
 ```
 
-### fixed-length-array
+### fixed length array
 Array of a set type of a set length
 ```ruby
 schema = Bare.ArrayFixedLen(Bare.U8, 3)
