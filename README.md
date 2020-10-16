@@ -9,6 +9,11 @@ BARE is a simple efficient binary encoding. It's primary advantage over json
 This implementation is complete but hasn't be rigorously tested for compatibility with another implementation. Please file an issue here on github if you find a bug.
 Feel free to submit a PR with your own fixes or improvements, just be sure to run the tests.
 
+# Installation
+## bundler
+```
+gem "bare-rb", :git => "https://git.sr.ht/~n8ta/bare-rb"
+```
 
 # Example
 ```ruby
