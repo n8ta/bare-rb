@@ -1,6 +1,5 @@
 require 'set'
 
-
 class Bare
   def self.encode(msg, schema)
     return schema.encode(msg)
@@ -16,19 +15,55 @@ class Bare
     # Types which are always equivalent to another instantiation of themselves
     # Eg. Uint.new == Uint.new
     # But Union.new(types1) != Union.new(types2)
-    #   since unions can hold differnet values
+    #   since unions could have different sets of types
     def ==(other)
       self.class == other.class
     end
   end
 
+  class Optional < BareType
+    def ==(otherType)
+      return otherType.class == Bare::Optional && otherType.optionalType == @optionalType
+    end
+    def optionalType
+      @optionalType
+    end
+    def initialize(optionalType)
+      @optionalType = optionalType
+    end
+    def encode(msg)
+      if msg.nil?
+        return "\x00".b
+      else
+        bytes = "\xFF".b
+        bytes << @optionalType.encode(msg)
+        return bytes
+      end
+    end
+    def decode(msg)
+      if msg.unpack("C")[0] == 0
+        return {value: nil, rest: msg[1..msg.size]}
+      else
+        return @optionalType.decode(msg[1..msg.size])
+      end
+    end
+  end
 
   class Map < BareType
+    def ==(otherType)
+      return otherType.class == Bare::Map && otherType.from == @from && otherType.to == @to
+    end
     def initialize(fromType, toType)
       raise("Map keys must use a primitive type which is not data or data<length>.") if
           !fromType.class.ancestors.include?(Primitive) || fromType.is_a?(Bare::Data) || fromType.is_a?(Bare::DataFixedLen)
       @from = fromType
       @to = toType
+    end
+    def from
+      @from
+    end
+    def to
+      @to
     end
     def encode(msg)
       bytes = Uint.new.encode(msg.size)
@@ -52,8 +87,6 @@ class Bare
       return {value: hash, rest: output[:rest]}
     end
   end
-
-
 
   class Union < Primitive
     def intToType
@@ -142,10 +175,6 @@ class Bare
   end
 
   class Uint < Primitive
-    def ==(otherObject)
-      otherObject.class == Uint
-    end
-
     def encode(msg)
       bytes = "".b
       _get_next_7_bits_as_byte(msg, 128) do |byte|
@@ -271,6 +300,16 @@ class Bare
   end
 
   class Struct < BareType
+    def ==(otherType)
+      return false unless otherType.class == Bare::Struct
+      @mapping.each do |k,v|
+        return false unless otherType.mapping[k] == v
+      end
+      return true
+    end
+    def mapping
+      @mapping
+    end
     def initialize(symbolToType)
       # Mapping from symbols to Bare types
       symbolToType.keys.each do |k|
@@ -339,12 +378,20 @@ class Bare
   end
 
   class ArrayFixedLen < BareType
+    def ==(otherType)
+      return otherType.class == Bare::ArrayFixedLen && otherType.type == @type && otherType.size == @size
+    end
     def initialize(type, size)
       @type = type
       @size = size
       raise("FixedLenArray size must be > 0") if size < 1
     end
-
+    def type
+      @type
+    end
+    def size
+      @size
+    end
     def encode(arr)
       raise("This FixLenArray is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
       bytes = ""
@@ -367,6 +414,16 @@ class Bare
   end
 
   class Enum < BareType
+    def ==(otherType)
+      return false unless otherType.class == Bare::Enum
+      @intToVal.each do |int, val|
+        return false unless otherType.intToVal[int] == val
+      end
+      return true
+    end
+    def intToVal
+      @intToVal
+    end
     def initialize(source)
       @intToVal = {}
       @valToInt = {}

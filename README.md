@@ -12,8 +12,7 @@ https://baremessages.org
 2. f32, f64
 3. string,
 4. void
-5. optional
-6. **Lexer and Parser**
+5. **Lexer and Parser**
 
 # Done List
 0. uint
@@ -29,4 +28,5 @@ https://baremessages.org
 10. union
 11. struct
 12. map
+13. optional
 
