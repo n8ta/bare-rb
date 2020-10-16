@@ -56,6 +56,9 @@ Bare.decode(output, schema)
 16. [union (type1 | type2 | type3)](#union)
 17. [struct](#struct)
 
+# Compatibility
+Tested on ruby 2.7.0
+
 ### uint
 Variable length unsigned integer
 ```ruby
