@@ -62,7 +62,7 @@ Bare.decode(output, schema)
 => -2
 ```
 
-### unsigned-ints
+### unsigned ints
 U8, U16, U32, U64
 ```ruby
 schema = Bare.U16
@@ -73,7 +73,7 @@ Bare.decode(output, schema)
 => 9
 ```
 
-### signed-ints
+### signed ints
 I8, I16, I32, I64
 ```ruby
 schema = Bare.I16
