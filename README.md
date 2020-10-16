@@ -27,6 +27,7 @@ gem 'bare-rb', :git => " git@git.sr.ht:~n8ta/bare-rb"
 And then just require the gem when you want to use it:
 ```ruby
 # Define your schema: here a variable length array of unsigned 1 byte integers
+require 'bare-rb'
 schema = Bare.Array(Bare.U8) 
 output = Bare.encode([1,2,3,4], schema)
 puts output.inspect
