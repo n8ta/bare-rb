@@ -269,5 +269,4 @@ Bare.decode(output, schema)
 
 
 # Todo List
-2. Docs for each non primitive type
-3. **Lexer and Parser**
+1. **Lexer and Parser for schema language"
