@@ -25,7 +25,7 @@ Bare.decode(output, schema)
 # Type Examples & Documentation
 1. [uint](uint)
 2. [int](int)
-3. [unsigned-int](u8, u16, u32, 36)
+3. [unsigned-ints](u8, u16, u32, 36)
 4. [signed-ints](i8, i16, i32, i64)
 5. [floats](f32, f64)
 6. [bool](bool)
