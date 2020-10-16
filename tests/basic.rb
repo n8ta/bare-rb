@@ -1,4 +1,4 @@
-require '../bare-rb/lib/bare-rb'
+require '../src/lib/bare-rb'
 starting = Time.now
 
 testing_hash = {1 => "abc", 5 => :cow, 16382 => 123}
@@ -12,7 +12,15 @@ struct_def2 = {int: Bare.U8,
 # input, expected output, schema
 encode_decode_tests = [
     [true, "\xFF\xFF".b, Bare.Bool],
-    [false, "\x00\x00".b, Bare.Bool],
+    [false, "\x00\x00".b, Bare.Bool],\
+
+    [5, "\x00\x00\xa0\x40".b, Bare.F32],
+    [1337, "\x00\x20\xa7\x44".b, Bare.F32],
+    [2**18, "\x00\x00\x80\x48".b, Bare.F32],
+
+    [5, "\x00\x00\x00\x00\x00\x00\x14\x40".b, Bare.F64],
+    [1337.1337, "\xe7\x1d\xa7\xe8\x88\xe4\x94\x40".b, Bare.F64],
+    [2**18, "\x00\x00\x00\x00\x00\x00\x10\x41".b, Bare.F64],
 
     [1, "\x01".b, Bare.U8],
     [3, "\x03".b, Bare.U8],
@@ -155,7 +163,7 @@ encode_decode_tests.each_with_index do |sample, i|
         raise("\nTest #{sample[0]} - ##{i.to_s}\nDifference found in enum\n#{decodedVal.inspect} != #{sample[0][key].inspect}") if decodedVal != sample[0][key]
       end
     elsif decoded != sample[0]
-      raise "\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed\n#{decoded.inspect} <- decode \n#{sample[0].inspect} <- input"
+      raise "\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed\n#{sample[0].inspect} <- input\n#{output} <- encoded \n#{decoded.inspect} <- decoded \n"
     end
   rescue Exception => e
     raise("\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed")

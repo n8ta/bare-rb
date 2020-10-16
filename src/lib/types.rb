@@ -1,9 +1,9 @@
+require_relative './exceptions'
+
 class BareTypes
 
   class BaseType
   end
-
-
 
   class BarePrimitive < BaseType
     # Types which are always equivalent to another instantiation of themselves
@@ -24,13 +24,31 @@ class BareTypes
     end
   end
 
+  class F32 < BarePrimitive
+    def encode(msg)
+      return [msg].pack("e")
+    end
+    def decode(msg)
+      return {value: msg.unpack("e")[0], rest: msg[4..msg.size]}
+    end
+  end
+
+  class F64 < BarePrimitive
+    def encode(msg)
+      return [msg].pack("E")
+    end
+    def decode(msg)
+      return {value: msg.unpack("E")[0], rest: msg[8..msg.size]}
+    end
+  end
+
   class String < BarePrimitive
     def encode(msg)
       encodedString = nil
       begin
         encodedString = msg.encode("UTF-8").b
-      rescue Encoding::UndefinedConversionError
-        raise("Unable to convert string to UTF-8, BARE strings must be UTF-8")
+      rescue Encoding::UndefinedConversionError => error
+        raise error.class, "Unable to convert string to UTF-8=, BARE strings are encoded as UTF8. If you can't convert your string to UTF-8 you can encode it with binary data"
       end
       bytes = Uint.new.encode(encodedString.size)
       bytes << encodedString
@@ -54,7 +72,7 @@ class BareTypes
     end
 
     def initialize(optionalType)
-      raise("Void types may only be used as members of the set of types in a tagged union.") if optionalType.class == BareTypes::Void
+      raise VoidUsedOutsideTaggedSet() if optionalType.class == BareTypes::Void
       @optionalType = optionalType
     end
 
@@ -83,8 +101,8 @@ class BareTypes
     end
 
     def initialize(fromType, toType)
-      raise("Void types may only be used as members of the set of types in a tagged union.") if fromType.class == BareTypes::Void or toType.class == BareTypes::Void
-      raise("Map keys must use a primitive type which is not data or data<length>.") if !fromType.class.ancestors.include?(BarePrimitive) || fromType.is_a?(BareTypes::Data) || fromType.is_a?(BareTypes::DataFixedLen)
+      raise VoidUsedOutsideTaggedSet if fromType.class == BareTypes::Void or toType.class == BareTypes::Void
+      raise MapKeyError("Map keys must use a primitive type which is not data or data<length>.") if !fromType.class.ancestors.include?(BarePrimitive) || fromType.is_a?(BareTypes::Data) || fromType.is_a?(BareTypes::DataFixedLen)
       @from = fromType
       @to = toType
     end
@@ -136,9 +154,9 @@ class BareTypes
 
     def initialize(intToType)
       intToType.keys.each do |i|
-        raise("Unions integer representations must be > 0") if i < 0 or !i.is_a?(Integer)
+        raise MinimumSizeError("Union's integer representations must be > 0, instead got: #{i}") if i < 0 or !i.is_a?(Integer)
       end
-      raise("Union must have at least one type") if intToType.keys.size < 1
+      raise MinimumSizeError("Union must have at least one type") if intToType.keys.size < 1
       @intToType = intToType
     end
 
@@ -154,7 +172,7 @@ class BareTypes
           break
         end
       end
-      raise("Unable to find matching type in union") if unionType.nil? || unionTypeInt.nil?
+      raise SchemaMismatch("Unable to find given type in union: #{@intToType.inspect}, type: #{type}") if unionType.nil? || unionTypeInt.nil?
       bytes = Uint.new.encode(unionTypeInt)
       encoded = unionType.encode(value)
       bytes << encoded
@@ -179,7 +197,7 @@ class BareTypes
     end
 
     def initialize(length)
-      raise("DataFixedLen must have a length greater than 0") if length < 1
+      raise MinimumSizeError("DataFixedLen must have a length greater than 0, got: #{length.inspect}") if length < 1
       @length = length
     end
 
@@ -221,7 +239,7 @@ class BareTypes
         end
       end
       bytes[bytes.size - 1] = [bytes.bytes[bytes.size - 1] & 127].pack('C')[0]
-      raise("Maximum u/int allowed is 64 bit precision") if bytes.size > 9
+      raise MaximumSizeError("Maximum u/int allowed is 64 bit precision") if bytes.size > 9
       return bytes
     end
 
@@ -348,9 +366,9 @@ class BareTypes
     def initialize(symbolToType)
       # Mapping from symbols to Bare types
       symbolToType.keys.each do |k|
-        raise("Struct keys must be symbols") unless k.is_a?(Symbol)
-        raise("Struct values must be a BareTypes::TYPE\nInstead got: #{symbolToType[k].inspect}") unless symbolToType[k].class.ancestors.include?(BaseType)
-        raise("Void types may only be used as members of the set of types in a tagged union.") if symbolToType.class == BareTypes::Void
+        raise BareException("Struct keys must be symbols") unless k.is_a?(Symbol)
+        raise BareException("Struct values must be a BareTypes::TYPE\nInstead got: #{symbolToType[k].inspect}") unless symbolToType[k].class.ancestors.include?(BaseType)
+        raise VoidUsedOutsideTaggedSet("Void types may only be used as members of the set of types in a tagged union. Void type used as struct key") if symbolToType.class == BareTypes::Void
       end
       raise("Struct must have at least one field") if symbolToType.keys.size == 0
       @mapping = symbolToType
@@ -359,7 +377,7 @@ class BareTypes
     def encode(msg)
       bytes = "".b
       @mapping.keys.each do |symbol|
-        raise("All struct fields must be specified, missing: #{symbol.inspect}") unless msg.keys.include?(symbol)
+        raise SchemaMismatch("All struct fields must be specified, missing: #{symbol.inspect}") unless msg.keys.include?(symbol)
         bytes << @mapping[symbol].encode(msg[symbol])
       end
       return bytes
@@ -387,7 +405,7 @@ class BareTypes
     end
 
     def initialize(type)
-      raise("Void types may only be used as members of the set of types in a tagged union.") if type.class == BareTypes::Void
+      raise VoidUsedOutsideTaggedSet("Void types may only be used as members of the set of types in a tagged union.") if type.class == BareTypes::Void
       @type = type
     end
 
@@ -422,8 +440,8 @@ class BareTypes
     def initialize(type, size)
       @type = type
       @size = size
-      raise("Void types may only be used as members of the set of types in a tagged union.") if type.class == BareTypes::Void
-      raise("FixedLenArray size must be > 0") if size < 1
+      raise VoidUsedOutsideTaggedSet("Void type may not be used as type of fixed length array.") if type.class == BareTypes::Void
+      raise MinimumSizeError("FixedLenArray size must be > 0") if size < 1
     end
 
     def type
@@ -435,7 +453,7 @@ class BareTypes
     end
 
     def encode(arr)
-      raise("This FixLenArray is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
+      raise SchemaMismatch("This FixLenArray is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
       bytes = ""
       arr.each do |item|
         bytes << @type.encode(item)
@@ -471,9 +489,9 @@ class BareTypes
     def initialize(source)
       @intToVal = {}
       @valToInt = {}
-      raise("Enum sources must be hash from integers to anything") if !source.is_a?(Hash)
-      raise("Enum must have unique positive integer assignments") if Set.new(source.keys).size != source.keys.size
-      raise("Enum must have unique values") if source.values.to_set.size != source.values.size
+      raise BareException("Enum must initialized with a hash from integers to anything") if !source.is_a?(Hash)
+      raise BareException("Enum must have unique positive integer assignments") if Set.new(source.keys).size != source.keys.size
+      raise BareException("Enum must have unique values") if source.values.to_set.size != source.values.size
       source.each do |k, v|
         raise("Enum keys must be positive integers") if k < 0
         @intToVal[k.to_i] = v
@@ -482,7 +500,7 @@ class BareTypes
     end
 
     def encode(msg)
-      raise("#{msg.inspect} is not part of your enum") if !@valToInt.keys.include?(msg)
+      raise SchemaMismatch("#{msg.inspect} is not part of this enum: #{@intToVal}") if !@valToInt.keys.include?(msg)
       integerRep = @valToInt[msg]
       encoded = BareTypes::Uint.new.encode(integerRep)
       return encoded

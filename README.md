@@ -16,11 +16,10 @@ puts output.inspect
 => "\x04\x01\x02\x03\x04"
 # You must know what schema was used to encode data to decode it
 Bare.decode(output, schema) 
-f=> [1, 2, 3, 4]
+=> [1, 2, 3, 4]
 ```
 
 # Todo List
-0. proper errors
 1. int
 2. f32, f64
 3. Docs for each non primitive type
@@ -43,5 +42,7 @@ f=> [1, 2, 3, 4]
 13. optional
 14. string
 15. void
+16. proper errors
+
 
 
