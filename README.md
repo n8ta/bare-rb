@@ -38,7 +38,7 @@ Bare.decode(output, schema)
 13. [fixed-length-array](array<type>)
 14. [array](array<type>)
 15. [map](map type TO type)
-16. [union](union ( type1, type2, type3 ))
+16. [union](union OF type1 type2 type3 )
 17. [struct](struct)
 
 ### uint
