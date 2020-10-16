@@ -284,4 +284,4 @@ Bare.decode(output, schema)
 
 
 # Todo List
-1. **Lexer and Parser for schema language"
+1. **Lexer and Parser for schema language**
