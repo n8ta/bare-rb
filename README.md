@@ -11,13 +11,11 @@ https://baremessages.org
 1. int
 2. f32, f64
 3. string,
-6. void
-7. optional
-8. variable length array
-9. map
-10. union
-11. struct1
-12. **Lexer and Parser**
+4. void
+5. optional
+6. map
+7. struct
+8. **Lexer and Parser**
 
 # Done List
 0. uint
@@ -29,3 +27,6 @@ https://baremessages.org
 6. suitable encode/decode framework
 7. data[length]
 8. data
+9. variable length array
+10. union
+

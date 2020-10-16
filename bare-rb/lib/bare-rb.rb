@@ -1,5 +1,6 @@
 require 'set'
 
+
 class Bare
   def self.encode(msg, schema)
     return schema.encode(msg)
@@ -9,13 +10,77 @@ class Bare
     return schema.decode(msg)[:value]
   end
 
-
-  class Union
-    def initialize(types) end
+  class BareType
+  end
+  class NodeType < BareType
+    # Types which are always equivalent to another instantiation of themselves
+    # Eg. Uint.new == Uint.new
+    # But Union.new(types1) != Union.new(types2)
+    #   since unions can hold differnet values
+    def ==(other)
+      self.class == other.class
+    end
   end
 
-  class DataFixedLen
+  class Union < NodeType
+    def intToType
+      @intToType
+    end
+
+    def ==(otherType)
+      return false unless otherType.is_a?(Bare::Union)
+      @intToType.each do |int, type|
+        return false unless type == otherType.intToType[int]
+      end
+      return true
+    end
+
+    def initialize(intToType)
+      intToType.keys.each do |i|
+        raise("Unions integer representations must be > 0") if i < 0 or !i.is_a?(Integer)
+      end
+      raise("Union must have at least one type") if intToType.keys.size < 1
+      @intToType = intToType
+    end
+
+    def encode(msg)
+      type = msg[:type]
+      value = msg[:value]
+      unionTypeInt = nil
+      unionType = nil
+      @intToType.each do |int, typ|
+        if type.class == typ.class
+          unionTypeInt = int
+          unionType = typ
+          break
+        end
+      end
+      raise("Unable to find matching type in union") if unionType.nil? || unionTypeInt.nil?
+      bytes = Uint.new.encode(unionTypeInt)
+      encoded = unionType.encode(value)
+      bytes << encoded
+    end
+
+    def decode(msg)
+      unionTypeInt = Uint.new.decode(msg)
+      int = unionTypeInt[:value]
+      type = @intToType[int]
+      value = type.decode(unionTypeInt[:rest])
+      return {value: {value: value[:value], type: type}, rest: value[:rest]}
+    end
+  end
+
+  class DataFixedLen < BareType
+    def ==(otherType)
+      return otherType.class == Bare::DataFixedLen && otherType.length == self.length
+    end
+
+    def length
+      return @length
+    end
+
     def initialize(length)
+      raise("DataFixedLen must have a length greater than 0") if length < 1
       @length = length
     end
 
@@ -28,7 +93,7 @@ class Bare
     end
   end
 
-  class Data
+  class Data < NodeType
     def encode(msg)
       bytes = Uint.new.encode(msg.size)
       bytes << msg
@@ -43,7 +108,11 @@ class Bare
     end
   end
 
-  class Uint
+  class Uint < NodeType
+    def ==(otherObject)
+      otherObject.class == Uint
+    end
+
     def encode(msg)
       bytes = "".b
       get_next_7_bits_as_byte(msg, 128) do |byte|
@@ -78,7 +147,7 @@ class Bare
     end
   end
 
-  class U8
+  class U8 < NodeType
     def encode(msg)
       return [msg].pack("C")
     end
@@ -88,7 +157,7 @@ class Bare
     end
   end
 
-  class U16
+  class U16 < NodeType
     def encode(msg)
       return [msg].pack("v")
     end
@@ -98,7 +167,7 @@ class Bare
     end
   end
 
-  class U32
+  class U32 < NodeType
     def encode(msg)
       return [msg].pack("V")
     end
@@ -108,7 +177,7 @@ class Bare
     end
   end
 
-  class U64
+  class U64 < NodeType
     def encode(msg)
       return [msg].pack("Q")
     end
@@ -118,7 +187,7 @@ class Bare
     end
   end
 
-  class I8
+  class I8 < NodeType
     def encode(msg)
       return [msg].pack("c")
     end
@@ -128,7 +197,7 @@ class Bare
     end
   end
 
-  class I16
+  class I16 < NodeType
     def encode(msg)
       return [msg].pack("s<")
     end
@@ -138,7 +207,7 @@ class Bare
     end
   end
 
-  class I32
+  class I32 < NodeType
     def encode(msg)
       return [msg].pack("l<")
     end
@@ -148,7 +217,7 @@ class Bare
     end
   end
 
-  class I64
+  class I64 < NodeType
     def encode(msg)
       return [msg].pack("q<")
     end
@@ -158,7 +227,7 @@ class Bare
     end
   end
 
-  class Bool
+  class Bool < NodeType
     def encode(msg)
       return msg ? "\xFF\xFF".b : "\x00\x00".b
     end
@@ -168,7 +237,75 @@ class Bare
     end
   end
 
-  class ArrayFixedLen
+  class Struct < BareType
+    def initialize(symbolToType)
+      # Mapping from symbols to Bare types
+      symbolToType.keys.each do |k|
+        raise("Struct keys must be symbols") unless k.is_a?(Symbol)
+        raise("Struct values must be a Bare::TYPE") unless symbolToType[k].class.ancestors.include?(BareType)
+      end
+      raise("Struct must have at least one field") if symbolToType.keys.size == 0
+      @mapping = symbolToType
+    end
+
+    def encode(msg)
+      bytes = "".b
+      @mapping.keys.each do |symbol|
+        raise("All struct fields must be specified, missing: #{symbol.inspect}") unless msg.keys.include?(symbol)
+        bytes << @mapping[symbol].encode(msg[symbol])
+      end
+      return bytes
+    end
+
+    def decode(msg)
+      hash = Hash.new
+      rest = msg
+      @mapping.keys.each do |symbol|
+        output = @mapping[symbol].decode(rest)
+        hash[symbol] = output[:value]
+        rest = output[:rest]
+      end
+      return {value: hash, rest: rest}
+    end
+  end
+
+  class Array < BareType
+    def ==(otherType)
+      return otherType.class == Bare::Array && otherType.type == self.type
+    end
+
+    def type
+      return @type
+    end
+
+    def initialize(type)
+      @type = type
+    end
+
+    def encode(msg)
+      bytes = Uint.new.encode(msg.size)
+      msg.each do |item|
+        bytes << @type.encode(item)
+      end
+      return bytes
+    end
+
+    def decode(msg)
+      output = Uint.new.decode(msg)
+      arr = []
+      arrayLen = output[:value]
+      lastSize = msg.size + 1 # Make sure msg size monotonically decreasing
+      (arrayLen - 1).downto(0) do
+        output = @type.decode(output[:rest])
+        arr << output[:value]
+        break if output[:rest].nil? || output[:rest].size == 0 || lastSize <= output[:rest].size
+        lastSize = output[:rest].size
+      end
+      return {value: arr, rest: output[:rest]}
+    end
+  end
+
+  class ArrayFixedLen < BareType
     def initialize(type, size)
       @type = type
       @size = size
@@ -196,7 +333,7 @@ class Bare
     end
   end
 
-  class Enum
+  class Enum < BareType
     def initialize(source)
       @intToVal = {}
       @valToInt = {}

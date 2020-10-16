@@ -5,8 +5,11 @@ testing_hash[1] = "abc"
 testing_hash[5] = :cow
 testing_hash[16382] = 123
 
-binaryData = "\x01\x80"
-12
+struct_def = {int: Bare::U8.new, uint: Bare::Uint.new, enum: Bare::Enum.new(testing_hash)}
+struct_def2 = {int: Bare::U8.new,
+               arr: Bare::ArrayFixedLen.new(Bare::U8.new, 3),
+               uint: Bare::Uint.new,
+               enum: Bare::Enum.new(testing_hash)}
 
 # input, expected output, schema
 encode_decode_tests = [
@@ -92,14 +95,31 @@ encode_decode_tests = [
 
 
     [[:cow, 123, "abc", 123], "\x05\xFE\x7F\x01\xFE\x7F".b, Bare::ArrayFixedLen.new(Bare::Enum.new(testing_hash), 4)],
-    [[[1,2,3],[4,5,6]], "\x01\x02\x03\x04\x05\x06".b, Bare::ArrayFixedLen.new(Bare::ArrayFixedLen.new(Bare::U8.new, 3), 2)],
+    [[[1, 2, 3], [4, 5, 6]], "\x01\x02\x03\x04\x05\x06".b, Bare::ArrayFixedLen.new(Bare::ArrayFixedLen.new(Bare::U8.new, 3), 2)],
 
-    ["\xFF\xFF\x00\x00".b , "\x04\xFF\xFF\x00\x00".b, Bare::Data.new],
-    ["\xFF\xFF\x00\x00\xFF\xFF".b , "\x06\xFF\xFF\x00\x00\xFF\xFF".b, Bare::Data.new],
+    ["\xFF\xFF\x00\x00".b, "\x04\xFF\xFF\x00\x00".b, Bare::Data.new],
+    ["\xFF\xFF\x00\x00\xFF\xFF".b, "\x06\xFF\xFF\x00\x00\xFF\xFF".b, Bare::Data.new],
 
-    ["\xFF\xFF\x00\x00".b , "\xFF\xFF\x00\x00".b, Bare::DataFixedLen.new(4)],
-    ["\xFF\xFF\x00\x00\xFF\xFF".b , "\xFF\xFF\x00\x00\xFF\xFF".b, Bare::DataFixedLen.new(6)],
+    ["\xFF\xFF\x00\x00".b, "\xFF\xFF\x00\x00".b, Bare::DataFixedLen.new(4)],
+    ["\xFF\xFF\x00\x00\xFF\xFF".b, "\xFF\xFF\x00\x00\xFF\xFF".b, Bare::DataFixedLen.new(6)],
+
+    [{type: Bare::Uint.new, value: 5}, "\x00\x05".b, Bare::Union.new({0 => Bare::Uint.new, 1 => Bare::U16.new})],
+    [{type: Bare::U16.new, value: 5}, "\x01\x05\x00".b, Bare::Union.new({0 => Bare::Uint.new, 1 => Bare::U16.new})],
+    [{type: Bare::DataFixedLen.new(6), value: "\xFF\xFF\x00\x00\xFF\xFF".b}, "\x04\xFF\xFF\x00\x00\xFF\xFF".b, Bare::Union.new({4 => Bare::DataFixedLen.new(6)})],
+    [{type: Bare::DataFixedLen.new(6), value: "\xFF\xFF\x00\x00\xFF\xFF".b}, "\x09\xFF\xFF\x00\x00\xFF\xFF".b, Bare::Union.new({4 => Bare::Uint.new, 9 => Bare::DataFixedLen.new(6)})],
+
+    [[3, 5, 6, 7], "\x04\x03\x05\x06\x07".b, Bare::Array.new(Bare::U8.new)],
+    [[[1, 2, 3], [4, 5, 6, 8]], "\x02\x03\x01\x02\x03\x04\x04\x05\x06\x08".b, Bare::Array.new(Bare::Array.new(Bare::U8.new))],
+
+    [{int: 1, uint: 16382, enum: :cow}, "\x01\xFE\x7F\x05".b, Bare::Struct.new(struct_def)],
+    [{enum: :cow, uint: 16382, int: 1}, "\x01\xFE\x7F\x05".b, Bare::Struct.new(struct_def)],
+    [{int: 1, arr: [9,8,7], uint: 5, enum: "abc"}, "\x01\x09\x08\x07\x05\x01".b, Bare::Struct.new(struct_def2)],
 ]
+
+struct_def2 = {int: Bare::U8.new,
+               arr: Bare::ArrayFixedLen.new(Bare::U8.new, 3),
+               uint: Bare::Uint.new,
+               enum: Bare::Enum.new(testing_hash)}
 
 decode_tests = [
     ["\x05\x00".b, true, Bare::Bool.new],
@@ -109,14 +129,19 @@ decode_tests = [
 
 encode_decode_tests.each_with_index do |sample, i|
   begin
-  output = Bare.encode(sample[0], sample[2])
-  if output != sample[1]
-    raise "\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed\nreal output: #{output.inspect} \ndoesn't match expected output: #{sample[1].inspect}"
-  end
-  decoded = Bare.decode(output, sample[2])
-  if decoded != sample[0]
-    raise "\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed\n decode #{decoded.inspect} \ndoesn't match input #{sample[0].inspect}"
-  end
+    output = Bare.encode(sample[0], sample[2])
+    if output != sample[1]
+      raise "\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed\nreal output: #{output.inspect} \ndoesn't match expected output: #{sample[1].inspect}"
+    end
+    decoded = Bare.decode(output, sample[2])
+    if decoded.is_a?(Hash)
+      decoded.keys.each do |key|
+        decodedVal = decoded[key]
+        raise("\nTest #{sample[0]} - ##{i.to_s}\nDifference found in enum\n#{decodedVal.inspect} != #{sample[0][key].inspect}") if decodedVal != sample[0][key]
+      end
+    elsif decoded != sample[0]
+      raise "\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed\n#{decoded.inspect} <- decode \n#{sample[0].inspect} <- input"
+    end
   rescue Exception => e
     raise("\nTest #{sample[0]} - ##{i.to_s} (#{sample[2].class.name}) failed")
     puts e.inspect
