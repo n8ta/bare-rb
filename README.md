@@ -271,6 +271,27 @@ Bare.decode(output, schema)
 => {:int=>-5, :uint=>8}
 ```
 
+# Exceptions
+### BareException
+Includes all of the following
+
+### VoidUsedOutsideTaggedSet
+Occurs when void is used inappropriately. 
+
+### MinimumSizeError
+Occurs when too few args are passed to a type (eg.a struct with 0 fields)
+ 
+### MaximumSizeError
+Occurs when too a value can't be encoded in the maximum allowed space of a uint/int.
+
+### MapKeyError
+Map keys must use a primitive type which is not data or data<length>.
+ 
+### EnumValueError
+Occurs when an enum is passed two keys with the same value ie `{ 0 => :abc, 1 => :abc }`
+
+### SchemaMismatch
+Occurs in many cases when the data provided to encode doesn't match the schema.
 
 
 

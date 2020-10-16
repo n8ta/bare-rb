@@ -506,7 +506,7 @@ class BareTypes
       @valToInt = {}
       raise BareException("Enum must initialized with a hash from integers to anything") if !source.is_a?(Hash)
       raise BareException("Enum must have unique positive integer assignments") if Set.new(source.keys).size != source.keys.size
-      raise BareException("Enum must have unique values") if source.values.to_set.size != source.values.size
+      raise EnumValueError("Enum must have unique values") if source.values.to_set.size != source.values.size
       source.each do |k, v|
         raise("Enum keys must be positive integers") if k < 0
         @intToVal[k.to_i] = v
