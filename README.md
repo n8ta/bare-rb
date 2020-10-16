@@ -10,12 +10,20 @@ This implementation is complete but hasn't be rigorously tested for compatibilit
 Feel free to submit a PR with your own fixes or improvements, just be sure to run the tests.
 
 # Installation
-## bundler
+Do one of the following
+```shell script
+gem install bare-rb
 ```
-gem "bare-rb", :git => "https://git.sr.ht/~n8ta/bare-rb"
+```ruby
+# Gemfile, pick one of these (choose your fighter)
+gem 'bare-rb', :git => "git@github.com:n8ta/bare-rb.git"
+gem 'bare-rb', :git => " git@git.sr.ht:~n8ta/bare-rb"
 ```
-
-# Example
+```ruby
+# Gemfile install latest version from source
+gem 'bare-rb'
+```
+And then just require the gem when you want to use it:
 ```ruby
 # Define your schema: here a variable length array of unsigned 1 byte integers
 schema = Bare.Array(Bare.U8) 
