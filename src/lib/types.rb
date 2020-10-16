@@ -15,6 +15,21 @@ class BareTypes
     end
   end
 
+  class Int < BarePrimitive
+    # https://developers.google.com/protocol-buffers/docs/encoding
+    # Easy to just convert to signed and re-use uint code
+    def encode(msg)
+      mappedInteger = msg < 0 ? -2 * msg - 1 : msg * 2
+      return Uint.new.encode(mappedInteger)
+    end
+    def decode(msg)
+      output = Uint.new.decode(msg)
+      unmapped = output[:value]
+      unmapped = unmapped.odd? ? (unmapped + 1) / - 2 : unmapped / 2
+      return { value: unmapped, rest: output[:rest] }
+    end
+  end
+
   class Void < BarePrimitive
     def encode(msg)
       return "".b

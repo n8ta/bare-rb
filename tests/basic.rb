@@ -140,6 +140,16 @@ encode_decode_tests = [
 
     [{type: Bare.Void}, "\x01".b, Bare.Union({0 => Bare.Uint, 1 => Bare.Void})],
     [{type: Bare.Uint, value: 5}, "\x00\x05".b, Bare.Union({0 => Bare.Uint, 1 => Bare.Void})],
+    [0, "\x00", Bare.Int],
+    [-1, "\x01", Bare.Int],
+    [1, "\x02", Bare.Int],
+    [-2, "\x03", Bare.Int],
+    [2, "\x04", Bare.Int],
+    [-3, "\x05", Bare.Int],
+    [22369, "\xC2\xDD\x02".b, Bare.Int],
+    [-22369, "\xC1\xDD\x02".b, Bare.Int],
+
+
 
 
 ]

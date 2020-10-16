@@ -13,6 +13,10 @@ class Bare
   # These classes are wrapped in methods for ergonomics.
   # Isn't Bare.Array(Bare.U8) nicer than Bare::Array.new(Bare::U8.new)?
 
+  def self.Int
+    return BareTypes::Int.new
+  end
+
   def self.Void
     return BareTypes::Void.new
   end
