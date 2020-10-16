@@ -12,7 +12,7 @@ class Bare
 
   class BareType
   end
-  class NodeType < BareType
+  class Primitive < BareType
     # Types which are always equivalent to another instantiation of themselves
     # Eg. Uint.new == Uint.new
     # But Union.new(types1) != Union.new(types2)
@@ -22,7 +22,40 @@ class Bare
     end
   end
 
-  class Union < NodeType
+
+  class Map < BareType
+    def initialize(fromType, toType)
+      raise("Map keys must use a primitive type which is not data or data<length>.") if
+          !fromType.class.ancestors.include?(Primitive) || fromType.is_a?(Bare::Data) || fromType.is_a?(Bare::DataFixedLen)
+      @from = fromType
+      @to = toType
+    end
+    def encode(msg)
+      bytes = Uint.new.encode(msg.size)
+      msg.each do |from, to|
+        bytes << @from.encode(from)
+        bytes << @to.encode(to)
+      end
+      return bytes
+    end
+    def decode(msg)
+      hash = Hash.new
+      output = Uint.new.decode(msg)
+      mapSize = output[:value]
+      (mapSize-1).to_i.downto(0) do
+        output = @from.decode(output[:rest])
+        key = output[:value]
+        output = @to.decode(output[:rest])
+        hash[key] = output[:value]
+        hash[key] = output[:value]
+      end
+      return {value: hash, rest: output[:rest]}
+    end
+  end
+
+
+
+  class Union < Primitive
     def intToType
       @intToType
     end
@@ -93,7 +126,7 @@ class Bare
     end
   end
 
-  class Data < NodeType
+  class Data < Primitive
     def encode(msg)
       bytes = Uint.new.encode(msg.size)
       bytes << msg
@@ -108,14 +141,14 @@ class Bare
     end
   end
 
-  class Uint < NodeType
+  class Uint < Primitive
     def ==(otherObject)
       otherObject.class == Uint
     end
 
     def encode(msg)
       bytes = "".b
-      get_next_7_bits_as_byte(msg, 128) do |byte|
+      _get_next_7_bits_as_byte(msg, 128) do |byte|
         bytes << byte
       end
       (bytes.size - 1).downto(0) do |i|
@@ -147,7 +180,7 @@ class Bare
     end
   end
 
-  class U8 < NodeType
+  class U8 < Primitive
     def encode(msg)
       return [msg].pack("C")
     end
@@ -157,7 +190,7 @@ class Bare
     end
   end
 
-  class U16 < NodeType
+  class U16 < Primitive
     def encode(msg)
       return [msg].pack("v")
     end
@@ -167,7 +200,7 @@ class Bare
     end
   end
 
-  class U32 < NodeType
+  class U32 < Primitive
     def encode(msg)
       return [msg].pack("V")
     end
@@ -177,7 +210,7 @@ class Bare
     end
   end
 
-  class U64 < NodeType
+  class U64 < Primitive
     def encode(msg)
       return [msg].pack("Q")
     end
@@ -187,7 +220,7 @@ class Bare
     end
   end
 
-  class I8 < NodeType
+  class I8 < Primitive
     def encode(msg)
       return [msg].pack("c")
     end
@@ -197,7 +230,7 @@ class Bare
     end
   end
 
-  class I16 < NodeType
+  class I16 < Primitive
     def encode(msg)
       return [msg].pack("s<")
     end
@@ -207,7 +240,7 @@ class Bare
     end
   end
 
-  class I32 < NodeType
+  class I32 < Primitive
     def encode(msg)
       return [msg].pack("l<")
     end
@@ -217,7 +250,7 @@ class Bare
     end
   end
 
-  class I64 < NodeType
+  class I64 < Primitive
     def encode(msg)
       return [msg].pack("q<")
     end
@@ -227,7 +260,7 @@ class Bare
     end
   end
 
-  class Bool < NodeType
+  class Bool < Primitive
     def encode(msg)
       return msg ? "\xFF\xFF".b : "\x00\x00".b
     end
@@ -242,7 +275,7 @@ class Bare
       # Mapping from symbols to Bare types
       symbolToType.keys.each do |k|
         raise("Struct keys must be symbols") unless k.is_a?(Symbol)
-        raise("Struct values must be a Bare::TYPE") unless symbolToType[k].class.ancestors.include?(BareType)
+        raise("Struct values must be a Bare::TYPE\nInstead got: #{symbolToType[k].inspect}") unless symbolToType[k].class.ancestors.include?(BareType)
       end
       raise("Struct must have at least one field") if symbolToType.keys.size == 0
       @mapping = symbolToType
@@ -363,7 +396,7 @@ class Bare
   end
 end
 
-def get_next_7_bits_as_byte(integer, base = 128)
+def _get_next_7_bits_as_byte(integer, base = 128)
   # Base is the initial value of the byte before
   # before |'ing it with 7bits from the integer
   groups_of_7 = (integer.size * 8) / 7 + (integer.size % 7 == 0 ? 0 : 1)
