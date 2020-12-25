@@ -34,7 +34,11 @@ Bare.decode(output, schema)
 ```
 
 ## Example With Schema File
-Schema files don't yet support references eg. supply an existing type as a struct value in another type. 
+
+WARNING: Schema files don't yet support references eg. supply an existing type as a struct value in another type.
+
+WARNING: Schema files don't yet support optional types
+ 
 This will be added soon.
 
 ```
