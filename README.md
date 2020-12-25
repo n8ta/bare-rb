@@ -48,8 +48,9 @@ schema = Bare.Schema({
   }),
   Type1: Bare.Int 
 })
+
+# Notice below we specify schema[:Type2] as it now ambiguous to just supply schema
 output = Bare.encode({t1: 5, name: "Some Name"}, schema[:Type2])
-# Note that now we need to c3all Bare.encode with a third arg, the symbol representing which type in the schema we want to encode.
 ```
 
 ## Example With Schema File
