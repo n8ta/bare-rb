@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'bare-rb'
-  s.version     = '0.1.3'
+  s.version     = '0.1.4'
   s.date        = '2020-10-13'
   s.summary     = "Bare Message Encoding Implementation"
   s.description = "The first implementation of the BARE (Binary Application Record Encoding) in Ruby. Includes schema parsing!"
