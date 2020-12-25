@@ -39,15 +39,15 @@ This will be added soon.
 
 ```
 # ./test3.schema
-# type Customer {
-#   name: string
-#   email: string
-#   orders: []{
-#     orderId: i64
-#     quantity: i32
-#   }
-#   metadata: map[string]data
-# }
+type Customer {
+  name: string
+  email: string
+  orders: []{
+    orderId: i64
+    quantity: i32
+  }
+  metadata: map[string]data
+}
 ```
 
 ```ruby
