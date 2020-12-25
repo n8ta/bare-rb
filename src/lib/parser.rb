@@ -105,7 +105,6 @@ class Parser
         raise SchemaParsingException.new("Enum must be followed by a '{'") if tokens[2] != :open_block
         tokens, enum = parse_enum(tokens[3..])
         @definitions[name.to_sym] = enum
-        return tokens, enum
       elsif tokens[0] == "optional"
         raise SchemaParsingException.new("Optional must be followed by a '< TYPE > you are missing the first <'") if tokens[1] != :less_than
         tokens, optional_type = self.parse(tokens[2..])

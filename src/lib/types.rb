@@ -427,6 +427,11 @@ class BareTypes
   end
 
   class Struct < BaseType
+
+    def [](key)
+      return @mapping[key]
+    end
+
     def ==(otherType)
       return false unless otherType.class == BareTypes::Struct
       @mapping.each do |k, v|

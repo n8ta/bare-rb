@@ -48,7 +48,7 @@ test_8 = {
     Employee: Bare.Struct(
         {
             name: Bare.String,
-            Email: Bare.String,
+            email: Bare.String,
             address: :Address,
             department: :Department,
             hireDate: :Time,
@@ -76,7 +76,7 @@ lexing_tests = [
     {file: "./test5.schema", ast: {Age: Bare.Optional(Bare.Int)}},
     {file: "./test6.schema", ast: {A_UNION: Bare.Union({0 => Bare.Int, 1 => Bare.Uint, 7 => Bare.Data, 8 => Bare.F32})}},
     {file: "./test7.schema", ast: test_7},
-    # {file: "./test8.schema", ast: test_8},
+    {file: "./test8.schema", ast: test_8},
 ]
 
 lexing_tests.each_with_index do |test, i|
@@ -84,7 +84,7 @@ lexing_tests.each_with_index do |test, i|
   correct_schema = Bare.Schema(test[:ast])
   if schema != correct_schema
     puts "Got this:\n#{schema}"
-    puts "But expected this: \n#{test[:ast]}"
+    puts "But expected this: \n#{correct_schema}"
     raise "Schema lexing/parsing test #{i + 1} failed"
   else
     puts "Passed parsing test #{i}"
@@ -113,10 +113,20 @@ msg = {name: "和製漢字",
                 {orderId: 123, quantity: -5}],
        metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
 }
-encoded = Bare.encode(msg, schema, :Customer)
-decoded = Bare.decode(encoded, schema, :Customer)
-
+encoded = Bare.encode(msg, schema[:Customer])
+decoded = Bare.decode(encoded, schema[:Customer])
 raise("Failed end to end schema encoded/decode test") if msg != decoded
+
+
+schema = Bare.Schema({
+                         Type2: Bare.Struct({
+                                                t1: :Type1,
+                                                name: Bare.String
+                                            }),
+                         Type1: Bare.Int
+                     })
+output = Bare.encode({t1: 5, name: "Some Name"}, schema[:Type2])
+
 
 
 # input, expected output, schema
