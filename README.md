@@ -74,11 +74,11 @@ schema = Bare.parse_schema('./test3.schema')
 # {:Customer => Bare.Struct(...) }
 
 msg = {name: "和製漢字",
-         email: "n8 AYT u.northwestern.edu",
-         orders: [{orderId: 5, quantity: 11},
-                  {orderId: 6, quantity: 2},
-                  {orderId: 123, quantity: -5}],
-         metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
+       email: "n8 AYT u.northwestern.edu",
+       orders: [{orderId: 5, quantity: 11},
+                {orderId: 6, quantity: 2},
+                {orderId: 123, quantity: -5}],
+       metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
 }
 
 encoded = Bare.encode(msg, schema[:Customer])
