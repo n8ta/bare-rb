@@ -148,7 +148,6 @@ class BareTypes
         key = output[:value]
         output = @to.decode(output[:rest])
         hash[key] = output[:value]
-        hash[key] = output[:value]
       end
       return {value: hash, rest: output[:rest]}
     end
@@ -236,7 +235,7 @@ class BareTypes
       output = Uint.new.decode(msg)
       rest = output[:rest]
       dataSize = output[:value]
-      return {value: rest[0..dataSize], rest: rest[dataSize..rest.size]}
+      return {value: rest[0..dataSize-1], rest: rest[dataSize..]}
     end
   end
 

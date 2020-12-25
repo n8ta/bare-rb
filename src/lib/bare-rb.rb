@@ -1,7 +1,17 @@
 require 'set'
 require_relative "types"
+require_relative "lexer"
+require_relative "parser"
 
 class Bare
+
+  def self.parse_schema(path)
+    # Hash of class names to BARE ASTs
+    # Eg. types['Customer'] == Bare.i32
+    types = parser(lexer(path))
+    return types
+  end
+
   def self.encode(msg, schema)
     return schema.encode(msg)
   end

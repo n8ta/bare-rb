@@ -1,4 +1,5 @@
 require '../src/lib/bare-rb'
+
 starting = Time.now
 
 testing_hash = {1 => "abc", 5 => :cow, 16382 => 123}
@@ -9,18 +10,83 @@ struct_def2 = {int: Bare.U8,
                uint: Bare.Uint,
                enum: Bare.Enum(testing_hash)}
 
+
+test_2_enum = {0 => "ACCOUNTING",
+               1 => "ADMINISTRATION",
+               2 => "CUSTOMER_SERVICE",
+               3 => "DEVELOPMENT",
+               99 => "JSMITH"}
+
+test_3_struct_inner = {
+    orderId: Bare.I64,
+    quantity: Bare.I32
+}
+
+test_3_struct = {
+    name: Bare.String,
+    email: Bare.String,
+    orders: Bare.Array(Bare.Struct(test_3_struct_inner)),
+    metadata: Bare.Map(Bare.String, Bare.Data)
+}
+
+lexing_tests = [{file: "./test0.schema", ast: {Key: Bare.Array(Bare.Uint)}},
+                {file: "./test1.schema", ast: {Key: Bare.String}},
+                {file: "./test2.schema", ast: {Department: Bare.Enum(test_2_enum)}},
+                {file: "./test3.schema", ast: {Customer: Bare.Struct(test_3_struct)}}]
+
+
+lexing_tests.each_with_index do |test, i|
+  schema = Bare.parse_schema(test[:file])
+  if schema != test[:ast]
+    puts "Got this:\n#{schema}"
+    puts "But expected this: \n#{test[:ast]}"
+    raise "Schema lexing/parsing test #{i + 1} failed"
+  else
+    puts "Passed parsing test #{i}"
+  end
+end
+
+
+# Parse a schema, encode some values, compare input to output
+# ./test3.schema
+# type Customer {
+#   name: string
+#   email: string
+#   orders: []{
+#     orderId: i64
+#     quantity: i32
+#   }
+#   metadata: map[string]data
+# }
+
+
+schema = Bare.parse_schema('./test3.schema')
+msg = {name: "和製漢字",
+         email: "n8 AYT u.northwestern.edu",
+         orders: [{orderId: 5, quantity: 11},
+                  {orderId: 6, quantity: 2},
+                  {orderId: 123, quantity: -5}],
+         metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
+}
+encoded = Bare.encode(msg, schema[:Customer])
+decoded = Bare.decode(encoded, schema[:Customer])
+
+raise("Failed end to end schema encoded/decode test") if msg != decoded
+
+
+
 # input, expected output, schema
 encode_decode_tests = [
     [true, "\xFF\xFF".b, Bare.Bool],
-    [false, "\x00\x00".b, Bare.Bool],\
+    [false, "\x00\x00".b, Bare.Bool], \
 
     [5, "\x00\x00\xa0\x40".b, Bare.F32],
     [1337, "\x00\x20\xa7\x44".b, Bare.F32],
-    [2**18, "\x00\x00\x80\x48".b, Bare.F32],
+    [2 ** 18, "\x00\x00\x80\x48".b, Bare.F32],
 
     [5, "\x00\x00\x00\x00\x00\x00\x14\x40".b, Bare.F64],
     [1337.1337, "\xe7\x1d\xa7\xe8\x88\xe4\x94\x40".b, Bare.F64],
-    [2**18, "\x00\x00\x00\x00\x00\x00\x10\x41".b, Bare.F64],
+    [2 ** 18, "\x00\x00\x00\x00\x00\x00\x10\x41".b, Bare.F64],
 
     [1, "\x01".b, Bare.U8],
     [3, "\x03".b, Bare.U8],
@@ -119,24 +185,24 @@ encode_decode_tests = [
 
     [{int: 1, uint: 16382, enum: :cow}, "\x01\xFE\x7F\x05".b, Bare.Struct(struct_def)],
     [{enum: :cow, uint: 16382, int: 1}, "\x01\xFE\x7F\x05".b, Bare.Struct(struct_def)],
-    [{int: 1, arr: [9,8,7], uint: 5, enum: "abc"}, "\x01\x09\x08\x07\x05\x01".b, Bare.Struct(struct_def2)],
+    [{int: 1, arr: [9, 8, 7], uint: 5, enum: "abc"}, "\x01\x09\x08\x07\x05\x01".b, Bare.Struct(struct_def2)],
 
-    [{8 => 16, 5 => 10 }, "\x02\x08\x10\x00\x05\x0A\x00".b, Bare.Map(Bare.U8, Bare.U16)],
-    [{8 => "abc", 6 => :cow }, "\x02\x08\x01\x06\x05".b, Bare.Map(Bare.U8, Bare.Enum(testing_hash))],
-    [{preInt: 4, theMap: {8 => 16, 5 => 10 }, postInt: 5}, "\x04\x02\x08\x10\x00\x05\x0A\x00\x05".b, Bare.Struct({preInt: Bare.U8, :theMap => Bare.Map(Bare.U8, Bare.U16), postInt: Bare.U8 })],
+    [{8 => 16, 5 => 10}, "\x02\x08\x10\x00\x05\x0A\x00".b, Bare.Map(Bare.U8, Bare.U16)],
+    [{8 => "abc", 6 => :cow}, "\x02\x08\x01\x06\x05".b, Bare.Map(Bare.U8, Bare.Enum(testing_hash))],
+    [{preInt: 4, theMap: {8 => 16, 5 => 10}, postInt: 5}, "\x04\x02\x08\x10\x00\x05\x0A\x00\x05".b, Bare.Struct({preInt: Bare.U8, :theMap => Bare.Map(Bare.U8, Bare.U16), postInt: Bare.U8})],
 
     [nil, "\x00".b, Bare.Optional(Bare.U8)],
     [1, "\xFF\x01".b, Bare.Optional(Bare.U8)],
-    [{preInt: 4, theMap: {8 => 16, 5 => 10 }, postInt: 5}, "\xFF\x04\x02\x08\x10\x00\x05\x0A\x00\x05".b, Bare.Optional(Bare.Struct({preInt: Bare.U8, :theMap => Bare.Map(Bare.U8, Bare.U16), postInt: Bare.U8 }))],
-    [{preInt: 4, opt: nil, postInt: 5}, "\x04\x00\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8 })],
-    [{preInt: 4, opt: 9, postInt: 5}, "\x04\xFF\x09\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8 })],
+    [{preInt: 4, theMap: {8 => 16, 5 => 10}, postInt: 5}, "\xFF\x04\x02\x08\x10\x00\x05\x0A\x00\x05".b, Bare.Optional(Bare.Struct({preInt: Bare.U8, :theMap => Bare.Map(Bare.U8, Bare.U16), postInt: Bare.U8}))],
+    [{preInt: 4, opt: nil, postInt: 5}, "\x04\x00\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8})],
+    [{preInt: 4, opt: 9, postInt: 5}, "\x04\xFF\x09\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8})],
 
     ["ABC", "\x03\x41\x42\x43".b, Bare.String],
     ["A C", "\x03\x41\x20\x43".b, Bare.String],
     ["😊", "\x04\xF0\x9F\x98\x8A".b, Bare.String],
     ["😊ABC😊", "\x0B\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A".b, Bare.String],
-    [{preInt: 4, str: "😊ABC😊", postInt: 5}, "\x04\x0B\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A\x05".b, Bare.Struct({preInt: Bare.U8, :str => Bare.String, postInt: Bare.U8 })],
-    [{preInt: 4, str: " 😊ABC😊 ", postInt: 5}, "\x04\x0D\x20\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A\x20\x05".b, Bare.Struct({preInt: Bare.U8, :str => Bare.String, postInt: Bare.U8 })],
+    [{preInt: 4, str: "😊ABC😊", postInt: 5}, "\x04\x0B\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A\x05".b, Bare.Struct({preInt: Bare.U8, :str => Bare.String, postInt: Bare.U8})],
+    [{preInt: 4, str: " 😊ABC😊 ", postInt: 5}, "\x04\x0D\x20\xF0\x9F\x98\x8A\x41\x42\x43\xF0\x9F\x98\x8A\x20\x05".b, Bare.Struct({preInt: Bare.U8, :str => Bare.String, postInt: Bare.U8})],
 
     [{type: Bare.Void}, "\x01".b, Bare.Union({0 => Bare.Uint, 1 => Bare.Void})],
     [{type: Bare.Uint, value: 5}, "\x00\x05".b, Bare.Union({0 => Bare.Uint, 1 => Bare.Void})],
@@ -148,8 +214,6 @@ encode_decode_tests = [
     [-3, "\x05", Bare.Int],
     [22369, "\xC2\xDD\x02".b, Bare.Int],
     [-22369, "\xC1\xDD\x02".b, Bare.Int],
-
-
 
 
 ]
@@ -188,8 +252,9 @@ decode_tests.each_with_index do |test, i|
   end
 end
 
+
 ending = Time.now
 
 elapsed = ending - starting
 
-puts "\n#{encode_decode_tests.size + decode_tests.size} tests \e[#{32}mPASSED\e[0m in #{elapsed} seconds\n"
+puts "\n#{encode_decode_tests.size + decode_tests.size + lexing_tests.size} tests \e[#{32}mPASSED\e[0m in #{elapsed} seconds\n"

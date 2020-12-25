@@ -1,4 +1,11 @@
+
 class BareException < StandardError
+  def initialize(msg=nil)
+    super
+  end
+end
+
+class SchemaParsingException < BareException
   def initialize(msg=nil)
     super
   end

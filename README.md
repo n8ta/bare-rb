@@ -10,7 +10,6 @@ This implementation is complete but hasn't be rigorously tested for compatibilit
 Feel free to submit a PR with your own fixes or improvements, just be sure to run the tests.
 
 # Installation
-Do one of the following
 ```shell script
 # Install locally
 gem install bare-rb
@@ -19,6 +18,8 @@ gem install bare-rb
 # Add to Gemfile
 gem 'bare-rb'
 ```
+
+## Example Without Schema File
 And then just require the gem when you want to use it:
 ```ruby
 # Define your schema: here a variable length array of unsigned 1 byte integers
@@ -31,6 +32,47 @@ puts output.inspect
 Bare.decode(output, schema) 
 => [1, 2, 3, 4]
 ```
+
+## Example With Schema File
+Schema files don't yet support references eg. supply an existing type as a struct value in another type. 
+This will be added soon.
+
+```
+# ./test3.schema
+# type Customer {
+#   name: string
+#   email: string
+#   orders: []{
+#     orderId: i64
+#     quantity: i32
+#   }
+#   metadata: map[string]data
+# }
+```
+
+```ruby
+require 'bare-rb'
+schema = Bare.parse_schema('./test3.schema')
+# Schema returns a hash so you must select which type in the hash you want 
+# {:Customer => Bare.Struct(...) }
+
+msg = {name: "和製漢字",
+         email: "n8 AYT u.northwestern.edu",
+         orders: [{orderId: 5, quantity: 11},
+                  {orderId: 6, quantity: 2},
+                  {orderId: 123, quantity: -5}],
+         metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
+}
+
+encoded = Bare.encode(msg, schema[:Customer])
+decoded = Bare.decode(encoded, schema[:Customer])
+
+msg == encoded
+# True
+```
+
+# Compatibility
+Ruby >= 2.7.0
 
 # Type Examples & Documentation
 1. [uint](#uint)
@@ -50,9 +92,6 @@ Bare.decode(output, schema)
 15. [map type -> type](#map)
 16. [union (type1 | type2 | type3)](#union)
 17. [struct](#struct)
-
-# Compatibility
-Tested on ruby 2.7.0
 
 ### uint
 Variable length unsigned integer

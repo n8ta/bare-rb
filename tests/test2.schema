@@ -1,0 +1,10 @@
+enum Department {
+  ACCOUNTING # UHOH
+  ADMINISTRATION
+  CUSTOMER_SERVICE
+  DEVELOPMENT
+
+
+  # Reserved for the CEO
+  JSMITH = 99
+}
