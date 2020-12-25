@@ -3,6 +3,10 @@ require_relative './exceptions'
 class BareTypes
 
   class BaseType
+    def initialize
+      @finalized = false
+      super
+    end
   end
 
   class BarePrimitive < BaseType
@@ -10,9 +14,14 @@ class BareTypes
     # Eg. Uint.new == Uint.new
     # But Union.new(types1) != Union.new(types2)
     #   since unions could have different sets of types
+
     def ==(other)
       self.class == other.class
     end
+
+    def finalize_references(schema)
+    end
+
   end
 
   class Int < BarePrimitive
@@ -22,11 +31,12 @@ class BareTypes
       mappedInteger = msg < 0 ? -2 * msg - 1 : msg * 2
       return Uint.new.encode(mappedInteger)
     end
+
     def decode(msg)
       output = Uint.new.decode(msg)
       unmapped = output[:value]
-      unmapped = unmapped.odd? ? (unmapped + 1) / - 2 : unmapped / 2
-      return { value: unmapped, rest: output[:rest] }
+      unmapped = unmapped.odd? ? (unmapped + 1) / -2 : unmapped / 2
+      return {value: unmapped, rest: output[:rest]}
     end
   end
 
@@ -34,6 +44,7 @@ class BareTypes
     def encode(msg)
       return "".b
     end
+
     def decode(msg)
       return {value: nil, rest: msg}
     end
@@ -43,6 +54,7 @@ class BareTypes
     def encode(msg)
       return [msg].pack("e")
     end
+
     def decode(msg)
       return {value: msg.unpack("e")[0], rest: msg[4..msg.size]}
     end
@@ -52,6 +64,7 @@ class BareTypes
     def encode(msg)
       return [msg].pack("E")
     end
+
     def decode(msg)
       return {value: msg.unpack("E")[0], rest: msg[8..msg.size]}
     end
@@ -69,17 +82,28 @@ class BareTypes
       bytes << encodedString
       return bytes
     end
+
     def decode(msg)
       output = Uint.new.decode(msg)
       strLen = output[:value]
-      string = output[:rest][0..strLen-1]
-      return {value: string.force_encoding("utf-8"), rest: output[:rest][strLen..output[:rest].size] }
+      string = output[:rest][0..strLen - 1]
+      return {value: string.force_encoding("utf-8"), rest: output[:rest][strLen..output[:rest].size]}
     end
   end
 
   class Optional < BaseType
     def ==(otherType)
       return otherType.class == BareTypes::Optional && otherType.optionalType == @optionalType
+    end
+
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      if @optionalType.is_a?(Symbol)
+        @optionalType = schema[@optionalType]
+      else
+        @optionalType.finalize_references(schema)
+      end
     end
 
     def optionalType
@@ -115,9 +139,23 @@ class BareTypes
       return otherType.class == BareTypes::Map && otherType.from == @from && otherType.to == @to
     end
 
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      if @from.is_a?(Symbol)
+        @to = schema[@to]
+      else
+        @to.finalize_references(schema)
+      end
+    end
+
     def initialize(fromType, toType)
       raise VoidUsedOutsideTaggedSet if fromType.class == BareTypes::Void or toType.class == BareTypes::Void
-      raise MapKeyError("Map keys must use a primitive type which is not data or data<length>.") if !fromType.class.ancestors.include?(BarePrimitive) || fromType.is_a?(BareTypes::Data) || fromType.is_a?(BareTypes::DataFixedLen)
+      if !fromType.class.ancestors.include?(BarePrimitive) ||
+          fromType.is_a?(BareTypes::Data) ||
+          fromType.is_a?(BareTypes::DataFixedLen)
+        raise MapKeyError("Map keys must use a primitive type which is not data or data<length>.")
+      end
       @from = fromType
       @to = toType
     end
@@ -154,8 +192,21 @@ class BareTypes
   end
 
   class Union < BarePrimitive
+
     def intToType
       @intToType
+    end
+
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      @intToType.keys.each do |key|
+        if @intToType[key].is_a?(Symbol)
+          @intToType[key] = schema[@intToType[key]]
+        else
+          @intToType[key].finalize_references(schema)
+        end
+      end
     end
 
     def ==(otherType)
@@ -210,6 +261,9 @@ class BareTypes
       return @length
     end
 
+    def finalize_references(schema)
+    end
+
     def initialize(length)
       raise MinimumSizeError("DataFixedLen must have a length greater than 0, got: #{length.inspect}") if length < 1
       @length = length
@@ -225,6 +279,10 @@ class BareTypes
   end
 
   class Data < BarePrimitive
+
+    def finalize_references(schema)
+    end
+
     def encode(msg)
       bytes = Uint.new.encode(msg.size)
       bytes << msg
@@ -235,11 +293,15 @@ class BareTypes
       output = Uint.new.decode(msg)
       rest = output[:rest]
       dataSize = output[:value]
-      return {value: rest[0..dataSize-1], rest: rest[dataSize..]}
+      return {value: rest[0..dataSize - 1], rest: rest[dataSize..]}
     end
   end
 
   class Uint < BarePrimitive
+
+    def finalize_references(schema)
+    end
+
     def encode(msg)
       bytes = "".b
       _get_next_7_bits_as_byte(msg, 128) do |byte|
@@ -373,16 +435,31 @@ class BareTypes
       return true
     end
 
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      @mapping.each do |key, val|
+        if val.is_a?(Symbol)
+          @mapping[key] = schema[val]
+        else
+          val.finalize_references(schema)
+        end
+      end
+    end
+
     def mapping
       @mapping
     end
 
     def initialize(symbolToType)
-      # Mapping from symbols to Bare types
+      # Mapping from symbols to Bare types (or possibly symbols before finalizing)
       symbolToType.keys.each do |k|
-        raise BareException("Struct keys must be symbols") unless k.is_a?(Symbol)
-        raise BareException("Struct values must be a BareTypes::TYPE\nInstead got: #{symbolToType[k].inspect}") unless symbolToType[k].class.ancestors.include?(BaseType)
-        raise VoidUsedOutsideTaggedSet("Void types may only be used as members of the set of types in a tagged union. Void type used as struct key") if symbolToType.class == BareTypes::Void
+        raise BareException.new("Struct keys must be symbols") unless k.is_a?(Symbol)
+        if (!symbolToType[k].class.ancestors.include?(BaseType) && !symbolToType[k].is_a?(Symbol))
+          raise BareException.new("Struct values must be a BareTypes::TYPE or a symbol with the same
+                name as a user defined type\nInstead got: #{symbolToType[k].inspect}")
+        end
+        raise VoidUsedOutsideTaggedSet.new("Void types may only be used as members of the set of types in a tagged union. Void type used as struct key") if symbolToType.class == BareTypes::Void
       end
       raise("Struct must have at least one field") if symbolToType.keys.size == 0
       @mapping = symbolToType
@@ -391,7 +468,7 @@ class BareTypes
     def encode(msg)
       bytes = "".b
       @mapping.keys.each do |symbol|
-        raise SchemaMismatch("All struct fields must be specified, missing: #{symbol.inspect}") unless msg.keys.include?(symbol)
+        raise SchemaMismatch.new("All struct fields must be specified, missing: #{symbol.inspect}") unless msg.keys.include?(symbol)
         bytes << @mapping[symbol].encode(msg[symbol])
       end
       return bytes
@@ -418,8 +495,18 @@ class BareTypes
       return @type
     end
 
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      if @type.is_a?(Symbol)
+        @type = schema[@type]
+      else
+        @type.finalize_references(schema)
+      end
+    end
+
     def initialize(type)
-      raise VoidUsedOutsideTaggedSet("Void types may only be used as members of the set of types in a tagged union.") if type.class == BareTypes::Void
+      raise VoidUsedOutsideTaggedSet.new("Void types may only be used as members of the set of types in a tagged union.") if type.class == BareTypes::Void
       @type = type
     end
 
@@ -451,11 +538,21 @@ class BareTypes
       return otherType.class == BareTypes::ArrayFixedLen && otherType.type == @type && otherType.size == @size
     end
 
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      if @type.is_a?(Symbol)
+        @type = schema[@type]
+      else
+        @type.finalize_references(schema)
+      end
+    end
+
     def initialize(type, size)
       @type = type
       @size = size
-      raise VoidUsedOutsideTaggedSet("Void type may not be used as type of fixed length array.") if type.class == BareTypes::Void
-      raise MinimumSizeError("FixedLenArray size must be > 0") if size < 1
+      raise VoidUsedOutsideTaggedSet.new("Void type may not be used as type of fixed length array.") if type.class == BareTypes::Void
+      raise MinimumSizeError.new("FixedLenArray size must be > 0") if size < 1
     end
 
     def type
@@ -467,7 +564,7 @@ class BareTypes
     end
 
     def encode(arr)
-      raise SchemaMismatch("This FixLenArray is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
+      raise SchemaMismatch.new("This FixLenArray is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
       bytes = ""
       arr.each do |item|
         bytes << @type.encode(item)
@@ -496,6 +593,10 @@ class BareTypes
       return true
     end
 
+
+    def finalize_references(schema)
+    end
+
     def intToVal
       @intToVal
     end
@@ -503,9 +604,9 @@ class BareTypes
     def initialize(source)
       @intToVal = {}
       @valToInt = {}
-      raise BareException("Enum must initialized with a hash from integers to anything") if !source.is_a?(Hash)
-      raise BareException("Enum must have unique positive integer assignments") if Set.new(source.keys).size != source.keys.size
-      raise EnumValueError("Enum must have unique values") if source.values.to_set.size != source.values.size
+      raise BareException.new("Enum must initialized with a hash from integers to anything") if !source.is_a?(Hash)
+      raise BareException.new("Enum must have unique positive integer assignments") if Set.new(source.keys).size != source.keys.size
+      raise EnumValueError.new("Enum must have unique values") if source.values.to_set.size != source.values.size
       source.each do |k, v|
         raise("Enum keys must be positive integers") if k < 0
         @intToVal[k.to_i] = v
@@ -514,7 +615,7 @@ class BareTypes
     end
 
     def encode(msg)
-      raise SchemaMismatch("#{msg.inspect} is not part of this enum: #{@intToVal}") if !@valToInt.keys.include?(msg)
+      raise SchemaMismatch.new("#{msg.inspect} is not part of this enum: #{@intToVal}") if !@valToInt.keys.include?(msg)
       integerRep = @valToInt[msg]
       encoded = BareTypes::Uint.new.encode(integerRep)
       return encoded

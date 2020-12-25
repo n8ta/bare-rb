@@ -1,0 +1,1 @@
+type Something [5]string

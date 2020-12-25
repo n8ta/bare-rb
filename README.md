@@ -33,14 +33,26 @@ Bare.decode(output, schema)
 => [1, 2, 3, 4]
 ```
 
+## More Complex Example Without Schema File
+If you need to create referential types you can use symbols as placeholders. 
+You'll also need to wrap your object in a call to Bare.Schema and provide
+the symbol for the type you want to encode/decode when working with the schema. 
+```ruby
+require 'bare-rb'
+# Schema accepts a hash of symbols starting with a capital letter to bare types.
+# Type 1 is an int, Type 2 is a reference to Type 1 plus a string.
+schema = Bare.Schema({
+  Type2: { 
+    t1: :Type1,
+    name: Bare.String
+  },
+  Type1: Bare.Int 
+})
+output = Bare.encode({t1: 5, name: "Some Name"}, schema, :Type2)
+# Note that now we need to c3all Bare.encode with a third arg, the symbol representing which type in the schema we want to encode.
+```
+
 ## Example With Schema File
-
-WARNING: Schema files don't yet support references eg. supply an existing type as a struct value in another type.
-
-WARNING: Schema files don't yet all aggregate types.
- 
-These will be added soon!
-
 ```
 # ./test3.schema
 type Customer {

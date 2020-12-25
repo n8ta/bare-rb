@@ -44,7 +44,7 @@ def lexer(path)
         tokens << :bar
       elsif match = /^([0-9]+)/.match(line)
         tokens << match[0].to_i
-        line = line[(match.size + 1)..]
+        line = line[(match[0].size)..]
         next
       elsif match = /^[a-z,A-Z,_][_,a-z,A-Z,0-9]+/.match(line)
         tokens << match[0]

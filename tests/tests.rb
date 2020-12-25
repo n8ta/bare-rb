@@ -29,15 +29,60 @@ test_3_struct = {
     metadata: Bare.Map(Bare.String, Bare.Data)
 }
 
-lexing_tests = [{file: "./test0.schema", ast: {Key: Bare.Array(Bare.Uint)}},
-                {file: "./test1.schema", ast: {Key: Bare.String}},
-                {file: "./test2.schema", ast: {Department: Bare.Enum(test_2_enum)}},
-                {file: "./test3.schema", ast: {Customer: Bare.Struct(test_3_struct)}}]
+test_7 = {PublicKey: Bare.DataFixedLen(128)}
+test_7[:Customer] = Bare.Struct({pubKey: test_7[:PublicKey]})
 
+test_8 = {
+    PublicKey: Bare.DataFixedLen(128),
+    Time: Bare.String,
+    Department: Bare.Enum(test_2_enum),
+    Customer: Bare.Struct(
+        {
+            PublicKey: :PublicKey,
+            address: :Address,
+            name: Bare.String,
+            email: Bare.String,
+            orders: Bare.Array(Bare.Struct(test_3_struct_inner)),
+            metadata: Bare.Map(Bare.String, Bare.Data)
+        }),
+    Employee: Bare.Struct(
+        {
+            name: Bare.String,
+            Email: Bare.String,
+            address: :Address,
+            department: :Department,
+            hireDate: :Time,
+            publicKey: Bare.Optional(:PublicKey),
+            metadata: Bare.Map(Bare.String, Bare.Data)
+        }
+    ),
+    Person: Bare.Union({0 => :Customer, 1 => :Employee}),
+    Address: Bare.Struct({address: Bare.ArrayFixedLen(Bare.String, 4),
+                          city: Bare.String,
+                          state: Bare.String,
+                          country: Bare.String}),
+}
+
+
+# test_8[:Customer][:address] = test_8[:Address]
+
+
+lexing_tests = [
+    {file: "./test0.schema", ast: {Key: Bare.Array(Bare.Uint)}},
+    {file: "./test1.schema", ast: {Key: Bare.String}},
+    {file: "./test2.schema", ast: {Department: Bare.Enum(test_2_enum)}},
+    {file: "./test3.schema", ast: {Customer: Bare.Struct(test_3_struct)}},
+    {file: "./test4.schema", ast: {Something: Bare.ArrayFixedLen(Bare.String, 5)}},
+    {file: "./test5.schema", ast: {Age: Bare.Optional(Bare.Int)}},
+    {file: "./test6.schema", ast: {A_UNION: Bare.Union({0 => Bare.Int, 1 => Bare.Uint, 7 => Bare.Data, 8 => Bare.F32})}},
+    {file: "./test7.schema", ast: test_7},
+    # {file: "./test8.schema", ast: test_8},
+]
 
 lexing_tests.each_with_index do |test, i|
   schema = Bare.parse_schema(test[:file])
-  if schema != test[:ast]
+  correct_schema = Bare.Schema(test[:ast])
+  if schema != correct_schema
     puts "Got this:\n#{schema}"
     puts "But expected this: \n#{test[:ast]}"
     raise "Schema lexing/parsing test #{i + 1} failed"
@@ -62,17 +107,16 @@ end
 
 schema = Bare.parse_schema('./test3.schema')
 msg = {name: "和製漢字",
-         email: "n8 AYT u.northwestern.edu",
-         orders: [{orderId: 5, quantity: 11},
-                  {orderId: 6, quantity: 2},
-                  {orderId: 123, quantity: -5}],
-         metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
+       email: "n8 AYT u.northwestern.edu",
+       orders: [{orderId: 5, quantity: 11},
+                {orderId: 6, quantity: 2},
+                {orderId: 123, quantity: -5}],
+       metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
 }
-encoded = Bare.encode(msg, schema[:Customer])
-decoded = Bare.decode(encoded, schema[:Customer])
+encoded = Bare.encode(msg, schema, :Customer)
+decoded = Bare.decode(encoded, schema, :Customer)
 
 raise("Failed end to end schema encoded/decode test") if msg != decoded
-
 
 
 # input, expected output, schema
@@ -246,7 +290,8 @@ encode_decode_tests.each_with_index do |sample, i|
 end
 
 decode_tests.each_with_index do |test, i|
-  decoded = Bare.decode(test[0], test[2])
+  schema = Bare.Schema({typeName: test[2]})
+  decoded = Bare.decode(test[0], schema, :typeName)
   if decoded != test[1]
     raise "\nDecode Test #{test[0]} - ##{i.to_s} (#{test[2].class.name}) failed\n decoding #{test[0].inspect} isn't equal to  #{test[1].inspect}\n instead got #{decoded.inspect}"
   end

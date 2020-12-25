@@ -4,20 +4,62 @@ require_relative "lexer"
 require_relative "parser"
 
 class Bare
+  def self.encode(msg, schema, type=nil)
+    if schema.is_a?(Bare::Schema)
+      raise NoTypeProvided("To encode with a schema as opposed to a raw type you must specify which type in the same you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
+      return schema[type].encode(msg)
+    else
+      schema.encode(msg)
+    end
+  end
+
+  def self.decode(msg, schema, type=nil)
+    if schema.is_a?(Bare::Schema)
+      raise NoTypeProvided("To decode with a schema as opposed to a raw type you must specify which type in the same you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
+      return schema[type].decode(msg)[:value]
+    else
+      schema.decode(msg)[:value]
+    end
+  end
 
   def self.parse_schema(path)
     # Hash of class names to BARE ASTs
     # Eg. types['Customer'] == Bare.i32
     types = parser(lexer(path))
-    return types
+    Bare.Schema(types)
   end
 
-  def self.encode(msg, schema)
-    return schema.encode(msg)
+  def self.Schema(hash)
+    Bare::Schema.new(hash)
   end
 
-  def self.decode(msg, schema)
-    return schema.decode(msg)[:value]
+  class Schema
+
+    def ==(otherSchema)
+      return false unless otherSchema.is_a?(Bare::Schema)
+      return @types == otherSchema.types
+    end
+
+    def types
+      @types
+    end
+
+    def [](key)
+      return @types[key]
+    end
+
+    def initialize(types)
+      @types = types
+      @types.keys.each do |key|
+        if @types[key].is_a?(Symbol)
+          @types[key] = @types[@types[key]]
+        else
+          # Users may user symbols to reference not yet defined types
+          # here we recursively call our bare classes to finalize their types
+          @types[key].finalize_references(@types)
+        end
+      end
+    end
   end
 
   # These classes are wrapped in methods for ergonomics.
@@ -118,5 +160,7 @@ class Bare
   def self.Enum(*opts)
     return BareTypes::Enum.new(*opts)
   end
+
+
 end
 
