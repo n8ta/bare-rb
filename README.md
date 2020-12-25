@@ -37,9 +37,9 @@ Bare.decode(output, schema)
 
 WARNING: Schema files don't yet support references eg. supply an existing type as a struct value in another type.
 
-WARNING: Schema files don't yet support optional types
+WARNING: Schema files don't yet all aggregate types.
  
-This will be added soon.
+These will be added soon!
 
 ```
 # ./test3.schema
