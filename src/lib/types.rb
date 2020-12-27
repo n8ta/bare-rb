@@ -33,10 +33,9 @@ class BareTypes
     end
 
     def decode(msg)
-      output = Uint.new.decode(msg)
-      unmapped = output[:value]
-      unmapped = unmapped.odd? ? (unmapped + 1) / -2 : unmapped / 2
-      return {value: unmapped, rest: output[:rest]}
+      value, rest = Uint.new.decode(msg)
+      value = value.odd? ? (value + 1) / -2 : value / 2
+      return  value, rest
     end
   end
 
@@ -46,17 +45,17 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: nil, rest: msg}
+      return nil, msg
     end
   end
 
   class F32 < BarePrimitive
     def encode(msg)
-      return [msg].pack("e")
+      [msg].pack("e")
     end
 
     def decode(msg)
-      return {value: msg.unpack("e")[0], rest: msg[4..msg.size]}
+      return msg.unpack("e")[0], msg[4..msg.size]
     end
   end
 
@@ -66,7 +65,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg.unpack("E")[0], rest: msg[8..msg.size]}
+      return msg.unpack("E")[0], msg[8..msg.size]
     end
   end
 
@@ -84,10 +83,9 @@ class BareTypes
     end
 
     def decode(msg)
-      output = Uint.new.decode(msg)
-      strLen = output[:value]
-      string = output[:rest][0..strLen - 1]
-      return {value: string.force_encoding("utf-8"), rest: output[:rest][strLen..output[:rest].size]}
+      strLen, rest = Uint.new.decode(msg)
+      string = rest[0..strLen - 1]
+      return string.force_encoding("utf-8"), rest[strLen..]
     end
   end
 
@@ -127,7 +125,7 @@ class BareTypes
 
     def decode(msg)
       if msg.unpack("C")[0] == 0
-        return {value: nil, rest: msg[1..msg.size]}
+        return nil, msg[1..msg.size]
       else
         return @optionalType.decode(msg[1..msg.size])
       end
@@ -179,15 +177,13 @@ class BareTypes
 
     def decode(msg)
       hash = Hash.new
-      output = Uint.new.decode(msg)
-      mapSize = output[:value]
+      mapSize, rest = Uint.new.decode(msg)
       (mapSize - 1).to_i.downto(0) do
-        output = @from.decode(output[:rest])
-        key = output[:value]
-        output = @to.decode(output[:rest])
-        hash[key] = output[:value]
+        key, rest = @from.decode(rest)
+        value, rest = @to.decode(rest)
+        hash[key] = value
       end
-      return {value: hash, rest: output[:rest]}
+      return hash, rest
     end
   end
 
@@ -244,11 +240,10 @@ class BareTypes
     end
 
     def decode(msg)
-      unionTypeInt = Uint.new.decode(msg)
-      int = unionTypeInt[:value]
+      int, rest = Uint.new.decode(msg)
       type = @intToType[int]
-      value = type.decode(unionTypeInt[:rest])
-      return {value: {value: value[:value], type: type}, rest: value[:rest]}
+      value, rest = type.decode(rest)
+      return {value: value, type: type}, rest
     end
   end
 
@@ -274,7 +269,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg[0..@length], rest: msg[@length..msg.size]}
+      return msg[0..@length], msg[@length..msg.size]
     end
   end
 
@@ -290,10 +285,8 @@ class BareTypes
     end
 
     def decode(msg)
-      output = Uint.new.decode(msg)
-      rest = output[:rest]
-      dataSize = output[:value]
-      return {value: rest[0..dataSize - 1], rest: rest[dataSize..]}
+      dataSize, rest = Uint.new.decode(msg)
+      return rest[0..dataSize - 1], rest[dataSize..]
     end
   end
 
@@ -320,7 +313,7 @@ class BareTypes
     end
 
     def decode(msg)
-      ints = msg.unpack("CCCCCCCCC")
+      ints = msg.unpack("CCCCCCCC")
       relevantInts = []
       i = 0
       while ints[i] & 0b10000000 == 128
@@ -332,7 +325,7 @@ class BareTypes
       relevantInts.each_with_index do |int, idx|
         sum += int << (idx * 7)
       end
-      return {value: sum, rest: msg[(i + 1)..msg.size]}
+      return sum, msg[(i + 1)..msg.size]
     end
   end
 
@@ -342,7 +335,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg[0].unpack("C")[0], rest: msg[1..msg.size]}
+      return msg[0].unpack("C")[0], msg[1..msg.size]
     end
   end
 
@@ -352,7 +345,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg.unpack("v")[0], rest: msg[2..msg.size]}
+      return msg.unpack("v")[0], msg[2..]
     end
   end
 
@@ -362,7 +355,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg.unpack("V")[0], rest: msg[4..msg.size]}
+      return msg.unpack("V")[0], msg[4..]
     end
   end
 
@@ -372,7 +365,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg.unpack("Q")[0], rest: [8..msg.size]}
+      return msg.unpack("Q")[0], msg[8..]
     end
   end
 
@@ -382,7 +375,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg[0].unpack("c")[0], rest: msg[1..msg.size]}
+      return msg[0].unpack("c")[0], msg[1..]
     end
   end
 
@@ -392,7 +385,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg.unpack('s<')[0], rest: msg[2..msg.size]}
+      return msg.unpack('s<')[0], msg[2..]
     end
   end
 
@@ -402,7 +395,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg.unpack('l<')[0], rest: msg[4..msg.size]}
+      return msg.unpack('l<')[0], msg[4..]
     end
   end
 
@@ -412,7 +405,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg.unpack('q<')[0], rest: msg[8..msg.size]}
+      return msg.unpack('q<')[0], msg[8..]
     end
   end
 
@@ -422,7 +415,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return {value: msg == "\x00\x00" ? false : true, rest: msg[1..msg.size]}
+      return (msg == "\x00\x00" ? false : true), msg[1..]
     end
   end
 
@@ -483,11 +476,10 @@ class BareTypes
       hash = Hash.new
       rest = msg
       @mapping.keys.each do |symbol|
-        output = @mapping[symbol].decode(rest)
-        hash[symbol] = output[:value]
-        rest = output[:rest]
+        value, rest = @mapping[symbol].decode(rest)
+        hash[symbol] = value
       end
-      return {value: hash, rest: rest}
+      return hash, rest
     end
   end
 
@@ -524,17 +516,16 @@ class BareTypes
     end
 
     def decode(msg)
-      output = Uint.new.decode(msg)
       arr = []
-      arrayLen = output[:value]
+      arrayLen, rest = Uint.new.decode(msg)
       lastSize = msg.size + 1 # Make sure msg size monotonically decreasing
       (arrayLen - 1).downto(0) do
-        output = @type.decode(output[:rest])
-        arr << output[:value]
-        break if output[:rest].nil? || output[:rest].size == 0 || lastSize <= output[:rest].size
-        lastSize = output[:rest].size
+        arrVal, rest = @type.decode(rest)
+        arr << arrVal
+        break if rest.nil? || rest.size == 0 || lastSize <= rest.size
+        lastSize = rest.size
       end
-      return {value: arr, rest: output[:rest]}
+      return arr, rest
     end
   end
 
@@ -577,15 +568,13 @@ class BareTypes
       return bytes
     end
 
-    def decode(msg)
+    def decode(rest)
       array = []
-      rest = msg
       @size.times do
-        output = @type.decode(rest)
-        rest = output[:rest]
-        array << output[:value]
+        arrVal, rest = @type.decode(rest)
+        array << arrVal
       end
-      return {value: array, rest: rest}
+      return array, rest
     end
   end
 
@@ -627,10 +616,8 @@ class BareTypes
     end
 
     def decode(msg)
-      output = BareTypes::Uint.new.decode(msg)
-      value = output[:value]
-      rest = output[:rest]
-      return {value: @intToVal[value], rest: rest}
+      value, rest = BareTypes::Uint.new.decode(msg)
+      return @intToVal[value], rest
     end
   end
 end
