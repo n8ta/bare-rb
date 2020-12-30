@@ -84,7 +84,7 @@ msg = {name: "和製漢字",
 encoded = Bare.encode(msg, schema[:Customer])
 decoded = Bare.decode(encoded, schema[:Customer])
 
-msg == encoded
+msg == decoded
 # True
 ```
 
