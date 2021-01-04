@@ -1,0 +1,6 @@
+language: ruby
+rvm:
+  - 2.7
+script:
+  - cd tests
+  - ruby tests.rb
