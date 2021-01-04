@@ -3,4 +3,4 @@ rvm:
   - 2.7
 script:
   - bundle install
-  - ruby tests/tests.rb
+  - ruby tests/ci.rb
