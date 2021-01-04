@@ -58,6 +58,8 @@ class Bare
         else
           # Users may user symbols to reference not yet defined types
           # here we recursively call our bare classes to finalize their types
+          # replacing Symbols like :SomeType with a reference to the other
+          #
           @types[key].finalize_references(@types)
         end
       end

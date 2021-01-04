@@ -15,7 +15,7 @@ test_2_enum = {0 => "ACCOUNTING",
                1 => "ADMINISTRATION",
                2 => "CUSTOMER_SERVICE",
                3 => "DEVELOPMENT",
-               99 => "JSMITH"}
+               99 => "JSMITH" }
 
 test_3_struct_inner = {
     orderId: Bare.I64,
@@ -92,19 +92,6 @@ lexing_tests.each_with_index do |test, i|
 end
 
 
-# Parse a schema, encode some values, compare input to output
-# ./test3.schema
-# type Customer {
-#   name: string
-#   email: string
-#   orders: []{
-#     orderId: i64
-#     quantity: i32
-#   }
-#   metadata: map[string]data
-# }
-
-
 schema = Bare.parse_schema('./test3.schema')
 msg = {name: "和製漢字",
        email: "n8 AYT u.northwestern.edu",
@@ -118,18 +105,6 @@ decoded = Bare.decode(encoded, schema[:Customer])
 raise("Failed end to end schema encoded/decode test") if msg != decoded
 
 
-schema = Bare.Schema({
-                         Type2: Bare.Struct({
-                                                t1: :Type1,
-                                                name: Bare.String
-                                            }),
-                         Type1: Bare.Int
-                     })
-output = Bare.encode({t1: 5, name: "Some Name"}, schema[:Type2])
-
-
-
-# input, expected output, schema
 encode_decode_tests = [
     [true, "\xFF\xFF".b, Bare.Bool],
     [false, "\x00\x00".b, Bare.Bool], \
