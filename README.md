@@ -1,4 +1,5 @@
 # BARE-RB
+![Build status on travis CI](https://api.travis-ci.com/n8ta/bare-rb.svg?branch=master)
 
 Implementation of the [Bare message protocol](https://baremessages.org/) in Ruby
 
