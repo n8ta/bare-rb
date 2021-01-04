@@ -2,5 +2,6 @@ language: ruby
 rvm:
   - 2.7
 script:
-  - bundle install
+  - gem install coveralls
+  - gem install simplecov
   - ruby tests/ci.rb

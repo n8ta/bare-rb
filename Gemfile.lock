@@ -26,6 +26,7 @@ PLATFORMS
 
 DEPENDENCIES
   coveralls
+  simplecov
 
 BUNDLED WITH
    2.1.4
