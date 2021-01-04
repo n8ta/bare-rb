@@ -1,3 +1,6 @@
+require 'coveralls'
+Coveralls.wear!
+
 require '../src/lib/bare-rb'
 
 starting = Time.now
