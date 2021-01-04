@@ -1,5 +1,6 @@
 # BARE-RB
-![Build status on travis CI](https://api.travis-ci.com/n8ta/bare-rb.svg?branch=master)
+![Build Status on Travis CI](https://api.travis-ci.com/n8ta/bare-rb.svg?branch=master)
+[![Coverage Status on Coveralls](https://coveralls.io/repos/github/n8ta/bare-rb/badge.svg?branch=master)](https://coveralls.io/github/n8ta/bare-rb?branch=master)
 
 Implementation of the [Bare message protocol](https://baremessages.org/) in Ruby
 
