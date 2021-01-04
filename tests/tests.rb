@@ -1,10 +1,8 @@
-require 'coveralls'
-require 'simplecov'
-SimpleCov.start
-SimpleCov.command_name 'Unit Tests'
-Coveralls.wear!
+require_relative '../src/lib/bare-rb'
 
-require '../src/lib/bare-rb'
+def rel_path(path)
+  File.join(File.dirname(__FILE__),path)
+end
 
 starting = Time.now
 
@@ -74,19 +72,21 @@ test_8 = {
 
 
 lexing_tests = [
-    {file: "./test0.schema", ast: {Key: Bare.Array(Bare.Uint)}},
-    {file: "./test1.schema", ast: {Key: Bare.String}},
-    {file: "./test2.schema", ast: {Department: Bare.Enum(test_2_enum)}},
-    {file: "./test3.schema", ast: {Customer: Bare.Struct(test_3_struct)}},
-    {file: "./test4.schema", ast: {Something: Bare.ArrayFixedLen(Bare.String, 5)}},
-    {file: "./test5.schema", ast: {Age: Bare.Optional(Bare.Int)}},
-    {file: "./test6.schema", ast: {A_UNION: Bare.Union({0 => Bare.Int, 1 => Bare.Uint, 7 => Bare.Data, 8 => Bare.F32})}},
-    {file: "./test7.schema", ast: test_7},
-    {file: "./test8.schema", ast: test_8},
+    {file: "./schemas/test0.schema", ast: {Key: Bare.Array(Bare.Uint)}},
+    {file: "./schemas/test1.schema", ast: {Key: Bare.String}},
+    {file: "./schemas/test2.schema", ast: {Department: Bare.Enum(test_2_enum)}},
+    {file: "./schemas/test3.schema", ast: {Customer: Bare.Struct(test_3_struct)}},
+    {file: "./schemas/test4.schema", ast: {Something: Bare.ArrayFixedLen(Bare.String, 5)}},
+    {file: "./schemas/test5.schema", ast: {Age: Bare.Optional(Bare.Int)}},
+    {file: "./schemas/test6.schema", ast: {A_UNION: Bare.Union({0 => Bare.Int, 1 => Bare.Uint, 7 => Bare.Data, 8 => Bare.F32})}},
+    {file: "./schemas/test7.schema", ast: test_7},
+    {file: "./schemas/test8.schema", ast: test_8},
 ]
 
+
 lexing_tests.each_with_index do |test, i|
-  schema = Bare.parse_schema(test[:file])
+  path = rel_path(test[:file])
+  schema = Bare.parse_schema(path)
   correct_schema = Bare.Schema(test[:ast])
   if schema != correct_schema
     puts "Got this:\n#{schema}"
@@ -98,7 +98,7 @@ lexing_tests.each_with_index do |test, i|
 end
 
 
-schema = Bare.parse_schema('./test3.schema')
+schema = Bare.parse_schema(rel_path('./schemas/test3.schema'))
 msg = {name: "和製漢字",
        email: "n8 AYT u.northwestern.edu",
        orders: [{orderId: 5, quantity: 11},
