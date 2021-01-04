@@ -2,6 +2,5 @@ language: ruby
 rvm:
   - 2.7
 script:
-  - gem install coveralls
-  - cd tests
-  - ruby tests.rb
+  - bundle install
+  - ruby tests/tests.rb
