@@ -1,4 +1,7 @@
 require 'coveralls'
+require 'simplecov'
+SimpleCov.start
+SimpleCov.command_name 'Unit Tests'
 Coveralls.wear!
 
 require '../src/lib/bare-rb'
