@@ -2,5 +2,6 @@ language: ruby
 rvm:
   - 2.7
 script:
+  - bundle
   - cd tests
   - ruby tests.rb
