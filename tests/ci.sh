@@ -3,5 +3,5 @@
 ruby -v
 gem install coveralls
 gem install simplecov
-pip3 install setuptools
+python3 -m pip install setuptools
 ruby tests/ci.rb
