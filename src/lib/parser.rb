@@ -38,15 +38,15 @@ class Parser
         name = tokens[0]
         int_repr = tokens[2]
         enum_hash[int_repr] = name
-        tokens = tokens[3..]
+        tokens = tokens[3..tokens.size]
       else
         enum_hash[count] = tokens[0]
         count += 1
-        tokens = tokens[1..]
+        tokens = tokens[1..tokens.size]
       end
     end
     enum = Bare.Enum(enum_hash)
-    return tokens[1..], enum
+    return tokens[1..tokens.size], enum
   end
 
   def parse_union(tokens)
@@ -55,13 +55,13 @@ class Parser
     # type A_UNION ( int | uint | data = 7 | f32 )
     while tokens[0] != :close_paren
       if tokens[0] == :bar
-        tokens = tokens[1..]
+        tokens = tokens[1..tokens.size]
       else
         if tokens[1] == :equal
           raise SchemaParsingException.new("Equals sign in union must be followed by a number") unless tokens[2].is_a?(Numeric)
           count = tokens[2]
           tokens, type = self.parse(tokens)
-          tokens = tokens[2..]
+          tokens = tokens[2..tokens.size]
           union_hash[count] = type
           count += 1
         else
@@ -78,63 +78,63 @@ class Parser
     struct_fields = {}
     while tokens.size >= 2 and tokens[1] == :colon
       name = tokens[0]
-      tokens, type = self.parse(tokens[2..])
+      tokens, type = self.parse(tokens[2..tokens.size])
       struct_fields[name.to_sym] = type
     end
-    return tokens[1..], struct_fields
+    return tokens[1..tokens.size], struct_fields
   end
 
   def parse(tokens)
     while tokens.size > 0
       if tokens[0] == "type"
         name = tokens[1]
-        tokens, type = self.parse(tokens[2..])
+        tokens, type = self.parse(tokens[2..tokens.size])
         @definitions[name.to_sym] = type
       elsif tokens[0] == "map"
         raise SchemaParsingException.new("Map must be followed by a '[' eg. map[string]data") if tokens[1] != :open_brace
-        tokens, map_from_type = parse(tokens[2..])
+        tokens, map_from_type = parse(tokens[2..tokens.size])
         raise SchemaParsingException.new("Map to type must be followed by a ']' eg. map[string]data") if tokens[0] != :close_brace
-        tokens, map_to_type = parse(tokens[1..])
+        tokens, map_to_type = parse(tokens[1..tokens.size])
         return tokens, Bare.Map(map_from_type, map_to_type)
       elsif tokens[0] == "data" && tokens.size > 3 && tokens[1] == :less_than
         raise SchemaParsingException.new("data< must be followed by a number for a fixed sized bare data") unless tokens[2].is_a?(Numeric)
         raise SchemaParsingException.new("data<# must be followed by a >") unless tokens[3] == :greater_than
-        return tokens[4..], Bare.DataFixedLen(tokens[2])
+        return tokens[4..tokens.size], Bare.DataFixedLen(tokens[2])
       elsif tokens[0] == "enum"
         name = tokens[1]
         raise SchemaParsingException.new("Enum must be followed by a '{'") if tokens[2] != :open_block
-        tokens, enum = parse_enum(tokens[3..])
+        tokens, enum = parse_enum(tokens[3..tokens.size])
         @definitions[name.to_sym] = enum
       elsif tokens[0] == "optional"
         raise SchemaParsingException.new("Optional must be followed by a '< TYPE > you are missing the first <'") if tokens[1] != :less_than
-        tokens, optional_type = self.parse(tokens[2..])
+        tokens, optional_type = self.parse(tokens[2..tokens.size])
         raise SchemaParsingException.new("Optional must be followed by a '< TYPE >' you are missing the last >") if tokens[0] != :greater_than
-        return tokens[1..], Bare.Optional(optional_type)
+        return tokens[1..tokens.size], Bare.Optional(optional_type)
       elsif tokens[0] == :open_brace
         if tokens[1].is_a?(Numeric)
           size = tokens[1]
           raise SchemaParsingException.new("Fixed Length Array size must be followed by a ']'") if tokens[2] != :close_brace
-          tokens, arr_type = parse(tokens[3..])
+          tokens, arr_type = parse(tokens[3..tokens.size])
           return tokens, Bare.ArrayFixedLen(arr_type, size)
         else
-          tokens, arr_type = parse(tokens[2..])
+          tokens, arr_type = parse(tokens[2..tokens.size])
           return tokens, Bare.Array(arr_type)
         end
       elsif tokens[0] == :open_paren
-        tokens, union_hash = parse_union(tokens[1..])
+        tokens, union_hash = parse_union(tokens[1..tokens.size])
         raise SchemaParsingException.new("Union must be followed by a ')'") if tokens[0] != :close_paren
-        return tokens[1..], Bare.Union(union_hash)
+        return tokens[1..tokens.size], Bare.Union(union_hash)
       elsif tokens[0] == :open_block
-        tokens, struct_fields = parse_struct(tokens[1..])
+        tokens, struct_fields = parse_struct(tokens[1..tokens.size])
         strct = Bare.Struct(struct_fields)
         return tokens, strct
       elsif @primitives.include?(tokens[0])
         type = @primitives[tokens[0]]
-        return tokens[1..], type
+        return tokens[1..tokens.size], type
       elsif @definitions.keys.include?(tokens[0].to_sym) # User defined type
-        return tokens[1..], @definitions[tokens[0].to_sym]
+        return tokens[1..tokens.size], @definitions[tokens[0].to_sym]
       elsif tokens[0].is_a?(String) && tokens[0][0].upcase == tokens[0][0] # Not yet defined user type
-        return tokens[1..], tokens[0].to_sym
+        return tokens[1..tokens.size], tokens[0].to_sym
       else
         raise SchemaParsingException.new("Unable to parse token: #{tokens[0]}")
       end

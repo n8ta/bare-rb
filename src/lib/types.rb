@@ -86,7 +86,7 @@ class BareTypes
     def decode(msg)
       strLen, rest = Uint.new.decode(msg)
       string = rest[0..strLen - 1]
-      return string.force_encoding("utf-8"), rest[strLen..]
+      return string.force_encoding("utf-8"), rest[strLen..rest.size]
     end
   end
 
@@ -287,7 +287,7 @@ class BareTypes
 
     def decode(msg)
       dataSize, rest = Uint.new.decode(msg)
-      return rest[0..dataSize - 1], rest[dataSize..]
+      return rest[0..dataSize - 1], rest[dataSize..rest]
     end
   end
 
@@ -346,7 +346,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return msg.unpack("v")[0], msg[2..]
+      return msg.unpack("v")[0], msg[2..msg.size]
     end
   end
 
@@ -356,7 +356,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return msg.unpack("V")[0], msg[4..]
+      return msg.unpack("V")[0], msg[4..msg.size]
     end
   end
 
@@ -366,7 +366,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return msg.unpack("Q")[0], msg[8..]
+      return msg.unpack("Q")[0], msg[8..msg.size]
     end
   end
 
@@ -376,7 +376,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return msg[0].unpack("c")[0], msg[1..]
+      return msg[0].unpack("c")[0], msg[1..msg.size]
     end
   end
 
@@ -386,7 +386,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return msg.unpack('s<')[0], msg[2..]
+      return msg.unpack('s<')[0], msg[2..msg.size]
     end
   end
 
@@ -396,7 +396,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return msg.unpack('l<')[0], msg[4..]
+      return msg.unpack('l<')[0], msg[4..msg.size]
     end
   end
 
@@ -406,7 +406,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return msg.unpack('q<')[0], msg[8..]
+      return msg.unpack('q<')[0], msg[8..msg.size]
     end
   end
 
@@ -416,7 +416,7 @@ class BareTypes
     end
 
     def decode(msg)
-      return (msg == "\x00\x00" ? false : true), msg[1..]
+      return (msg == "\x00\x00" ? false : true), msg[1..msg.size]
     end
   end
 
