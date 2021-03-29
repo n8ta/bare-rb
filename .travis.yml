@@ -3,7 +3,7 @@ os: linux
 dist: xenial
 before_install:
   - sudo apt-get update
-  - sudo apt-get install python3 python3-pip
+  - sudo apt-get install python3.6 python3.6-pip
 jobs:
   include:
     - rvm: 2.7
