@@ -8,28 +8,34 @@ jobs:
   include:
     - rvm: 2.7
       script:
-        - python3.8 --version
-        - python3.8 -m pip install setuptools
+        - python3 --version
+        - python3 -m pip install setuptools
         - ruby -v
-        - gem install coveralls
-        - gem install simplecov
+        - gem install bundler -v 2.2.15
+        - cd tests
+        - bundle
+        - cd ..
         - sudo ruby tests/ci.rb
 
     - rvm: 2.6
       script:
-        - python3.8 --version
-        - python3.8 -m pip install setuptools
+        - python3 --version
+        - python3 -m pip install setuptools
         - ruby -v
-        - gem install coveralls
-        - gem install simplecov
+        - gem install bundler -v 2.2.15
+        - cd tests
+        - bundle
+        - cd ..
         - sudo ruby tests/ci.rb
 
     - rvm: 2.5
       script:
-        - python3.8 --version
-        - python3.8 -m pip install setuptools
+        - python3 --version
+        - python3 -m pip install setuptools
         - ruby -v
-        - gem install coveralls
-        - gem install simplecov
+        - gem install bundler -v 2.2.15
+        - cd tests
+        - bundle
+        - cd ..
         - sudo ruby tests/ci.rb
 
