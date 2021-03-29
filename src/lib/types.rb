@@ -118,7 +118,7 @@ class BareTypes
       if msg.nil?
         return "\x00".b
       else
-        bytes = "\xFF".b
+        bytes = "\x01".b
         bytes << @optionalType.encode(msg)
         return bytes
       end
@@ -266,7 +266,10 @@ class BareTypes
     end
 
     def encode(msg)
-      return msg
+      if msg.size != @length
+        raise FixedDataSizeWrong.new("Message is not proper sized for DataFixedLen should have been #{@length} but was #{msg.size}")
+      end
+      msg
     end
 
     def decode(msg)

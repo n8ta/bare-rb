@@ -5,6 +5,12 @@ class BareException < StandardError
   end
 end
 
+class FixedDataSizeWrong < BareException
+  def initialize(msg=nil)
+    super
+  end
+end
+
 class NoTypeProvided < BareException
   def initialize(msg = nil)
     super

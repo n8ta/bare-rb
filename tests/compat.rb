@@ -2,7 +2,8 @@
 
 require_relative '../src/lib/bare-rb'
 
-file_path = ARGV[0]
+file_path_1 = ARGV[0]
+file_path_2 = ARGV[1]
 
 schema = Bare.parse_schema("./demo.schema")
 
@@ -26,6 +27,25 @@ customer = {
   }
 }
 
-file = open(file_path, 'w+')
+
+pkey = "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111123".b
+emp = {
+  name: "John Galt",
+  email: "j@g.com",
+  address: address,
+  department: "ACCOUNTING",
+  hireDate: "sometime",
+  publicKey: pkey,
+  metadata: {
+    "ssh" => 'jafsl8dfaf2',
+    "gpg" => 'jofa8f2jdlasfj8'
+  }
+}
+
+file = open(file_path_1, 'w+')
 file.write(Bare.encode(customer, schema[:Customer]))
+file.close()
+
+file = open(file_path_2, 'w+')
+file.write(Bare.encode(emp, schema[:Employee]))
 file.close()

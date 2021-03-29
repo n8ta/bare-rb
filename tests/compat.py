@@ -2,9 +2,12 @@ import bare
 import sys
 from bare.bare_ast import TypeKind, BarePrimitive, StructType, OptionalType, NamedType, ArrayType, MapType, UnionType, UnionValue
 
-file_path = sys.argv[1]
+file_path1 = sys.argv[1]
+file_path2 = sys.argv[2]
 
-from demo import Customer, Address
+from demo import Customer, Address, Employee, Department, Time, PublicKey
+
+
 
 address = Address()
 address.address = ["Address line 1", "", "", ""]
@@ -25,5 +28,24 @@ customer.metadata = {
     'gpg': b'jofa8f2jdlasfj8'
 }
 
-with open(file_path, 'wb') as handle:
+dept = Department(Department.ACCOUNTING)
+time = Time("sometime")
+pkey = PublicKey(value=b'11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111123')
+
+emp = Employee()
+emp.name = "John Galt"
+emp.email = "j@g.com"
+emp.address = address
+emp.department = dept
+emp.hireDate = time
+emp.publicKey = pkey
+emp.metadata = {
+    'ssh': b'jafsl8dfaf2',
+    'gpg': b'jofa8f2jdlasfj8'
+}
+
+with open(file_path1, 'wb') as handle:
     handle.write(customer.pack())
+
+with open(file_path2, 'wb') as handle:
+    handle.write(emp.pack())

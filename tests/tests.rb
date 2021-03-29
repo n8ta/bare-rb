@@ -227,10 +227,10 @@ encode_decode_tests = [
     [{preInt: 4, theMap: {8 => 16, 5 => 10}, postInt: 5}, "\x04\x02\x08\x10\x00\x05\x0A\x00\x05".b, Bare.Struct({preInt: Bare.U8, :theMap => Bare.Map(Bare.U8, Bare.U16), postInt: Bare.U8})],
 
     [nil, "\x00".b, Bare.Optional(Bare.U8)],
-    [1, "\xFF\x01".b, Bare.Optional(Bare.U8)],
-    [{preInt: 4, theMap: {8 => 16, 5 => 10}, postInt: 5}, "\xFF\x04\x02\x08\x10\x00\x05\x0A\x00\x05".b, Bare.Optional(Bare.Struct({preInt: Bare.U8, :theMap => Bare.Map(Bare.U8, Bare.U16), postInt: Bare.U8}))],
+    [1, "\x01\x01".b, Bare.Optional(Bare.U8)],
+    [{preInt: 4, theMap: {8 => 16, 5 => 10}, postInt: 5}, "\01\x04\x02\x08\x10\x00\x05\x0A\x00\x05".b, Bare.Optional(Bare.Struct({preInt: Bare.U8, :theMap => Bare.Map(Bare.U8, Bare.U16), postInt: Bare.U8}))],
     [{preInt: 4, opt: nil, postInt: 5}, "\x04\x00\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8})],
-    [{preInt: 4, opt: 9, postInt: 5}, "\x04\xFF\x09\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8})],
+    [{preInt: 4, opt: 9, postInt: 5}, "\x04\x01\x09\x05".b, Bare.Struct({preInt: Bare.U8, :opt => Bare.Optional(Bare.U8), postInt: Bare.U8})],
 
     ["ABC", "\x03\x41\x42\x43".b, Bare.String],
     ["A C", "\x03\x41\x20\x43".b, Bare.String],

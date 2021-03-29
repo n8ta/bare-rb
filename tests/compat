@@ -2,8 +2,10 @@
 
 echo "START"
 clean_up() {
-  rm ruby.bin
-  rm python.bin
+  rm ruby.bin1
+  rm ruby.bin2
+  rm python.bin1
+  rm python.bin2
 }
 
 # cd into tests directory and install bare-py
@@ -17,16 +19,25 @@ bare demo.schema demo.py
 
 # Run ruby / python scripts
 
-./compat.rb ruby.bin
-python3 ./compat.py python.bin
+./compat.rb ruby.bin1 ruby.bin2
+python3 ./compat.py python.bin1 python.bin2
 
-if cmp ruby.bin python.bin; then
-  echo "Ruby and python implementations match!"
-  clean_up
-  exit 0
+if cmp ruby.bin1 python.bin1; then
+  echo "Ruby and python implementations match for first test"
+
+  if cmp ruby.bin2 python.bin2; then
+    echo "Ruby and python implementations match for second test"
+  else
+    >&2 echo "Ruby and python bare implementations do not match"
+    clean_up
+    exit 255
+  fi
 else
   >&2 echo "Ruby and python bare implementations do not match"
   clean_up
   exit 255
 fi
+
+clean_up
+exit 0
 
