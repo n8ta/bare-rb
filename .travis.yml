@@ -1,21 +1,26 @@
 language: ruby
 os: linux
 dist: xenial
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install python3 python3-pip
 jobs:
   include:
     - rvm: 2.7
-      python: 3.7
       script:
+        - python --version
         - ruby -v
         - tests/ci.sh
     - rvm: 2.6
-      python: 3.7
+
       script:
+        - python --version
         - ruby -v
         - tests/ci.sh
     - rvm: 2.5
-      python: 3.7
+
       script:
+        - python --version
         - ruby -v
         - tests/ci.sh
 
