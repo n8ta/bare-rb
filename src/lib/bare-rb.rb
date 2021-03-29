@@ -6,7 +6,7 @@ require_relative "parser"
 class Bare
   def self.encode(msg, schema, type=nil)
     if schema.is_a?(Bare::Schema)
-      raise NoTypeProvided("To encode with a schema as opposed to a raw type you must specify which type in the same you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
+      raise NoTypeProvided("To encode with a schema as opposed to a raw type you must specify which type in the schema you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
       schema[type].encode(msg)
     else
       schema.encode(msg)
@@ -36,10 +36,9 @@ class Bare
   end
 
   class Schema
-
     def ==(otherSchema)
       return false unless otherSchema.is_a?(Bare::Schema)
-      return @types == otherSchema.types
+      @types == otherSchema.types
     end
 
     def types
@@ -56,10 +55,9 @@ class Bare
         if @types[key].is_a?(Symbol)
           @types[key] = @types[@types[key]]
         else
-          # Users may user symbols to reference not yet defined types
+          # Users may use symbols to reference not yet defined types
           # here we recursively call our bare classes to finalize their types
-          # replacing Symbols like :SomeType with a reference to the other
-          #
+          # replacing Symbols like :SomeType with a reference to the other type
           @types[key].finalize_references(@types)
         end
       end

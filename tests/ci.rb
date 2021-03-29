@@ -8,7 +8,7 @@ puts "Calling tests.rb script"
 
 require_relative './tests.rb'
 
-puts "Calling bare-py to tests interoperability with bare-rb"
+puts "Calling bare-py to test interoperability"
 
 compat = File.join(__dir__, "compat")
 system("#{compat} #{__dir__}") || exit(-1)

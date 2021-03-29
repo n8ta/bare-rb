@@ -1,6 +1,10 @@
 language: python
+rvm:
+  - 2.4
+  - 2.5
+  - 2.6
+  - 2.7
 script:
-  - rvm install 2.7
   - gem install coveralls
   - gem install simplecov
   - pip3 install setuptools

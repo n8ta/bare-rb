@@ -10,6 +10,7 @@ class BareTypes
   end
 
   class BarePrimitive < BaseType
+
     # Types which are always equivalent to another instantiation of themselves
     # Eg. Uint.new == Uint.new
     # But Union.new(types1) != Union.new(types2)
