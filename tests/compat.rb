@@ -26,7 +26,6 @@ customer = {
   }
 }
 
-puts file_path
 file = open(file_path, 'w+')
 file.write(Bare.encode(customer, schema[:Customer]))
 file.close()

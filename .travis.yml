@@ -2,11 +2,11 @@ language: python
 jobs:
   include:
     - rvm: 2.5
+      script:
+        - tests/ci.sh
     - rvm: 2.6
+      script:
+        - tests/ci.sh
     - rvm: 2.7
-script:
-  - ruby -v
-  - gem install coveralls
-  - gem install simplecov
-  - pip3 install setuptools
-  - ruby tests/ci.rb
+      script:
+        - tests/ci.sh
