@@ -11,19 +11,22 @@ jobs:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - sudo tests/ci.sh
+        - gem install bundler:2.1.4
+        - sudo ruby tests/ci.rb
+
     - rvm: 2.6
-
       script:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - sudo tests/ci.sh
+        - gem install bundler:2.1.4
+        - sudo ruby tests/ci.rb
+
     - rvm: 2.5
-
       script:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - sudo tests/ci.sh
+        - gem install bundler:2.1.4
+        - sudo ruby tests/ci.rb
 
