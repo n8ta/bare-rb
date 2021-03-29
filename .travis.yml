@@ -11,8 +11,8 @@ jobs:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - gem install bundler:2.1.4
-        - bundle install
+        - gem install coveralls
+        - gem install simplecov
         - sudo ruby tests/ci.rb
 
     - rvm: 2.6
@@ -20,8 +20,8 @@ jobs:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - gem install bundler:2.1.4
-        - bundle install
+        - gem install coveralls
+        - gem install simplecov
         - sudo ruby tests/ci.rb
 
     - rvm: 2.5
@@ -29,7 +29,7 @@ jobs:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - gem install bundler:2.1.4
-        - bundle install
+        - gem install coveralls
+        - gem install simplecov
         - sudo ruby tests/ci.rb
 
