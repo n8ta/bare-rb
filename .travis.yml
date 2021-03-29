@@ -1,7 +1,9 @@
 language: python
+os: linux
+dist: xenial
 jobs:
   include:
-    - rvm: 2.5
+    - rvm: 2.7
       script:
         - ruby -v
         - tests/ci.sh
@@ -9,7 +11,8 @@ jobs:
       script:
         - ruby -v
         - tests/ci.sh
-    - rvm: 2.7
+    - rvm: 2.5
       script:
         - ruby -v
         - tests/ci.sh
+
