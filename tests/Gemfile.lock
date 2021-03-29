@@ -1,0 +1,36 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    coveralls (0.7.2)
+      multi_json (~> 1.3)
+      rest-client (= 1.6.7)
+      simplecov (>= 0.7)
+      term-ansicolor (= 1.2.2)
+      thor (= 0.18.1)
+    docile (1.3.5)
+    mime-types (3.3.1)
+      mime-types-data (~> 3.2015)
+    mime-types-data (3.2021.0225)
+    multi_json (1.15.0)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
+    simplecov (0.21.2)
+      docile (~> 1.1)
+      simplecov-html (~> 0.11)
+      simplecov_json_formatter (~> 0.1)
+    simplecov-html (0.12.3)
+    simplecov_json_formatter (0.1.2)
+    term-ansicolor (1.2.2)
+      tins (~> 0.8)
+    thor (0.18.1)
+    tins (0.13.2)
+
+PLATFORMS
+  x86_64-darwin-18
+
+DEPENDENCIES
+  coveralls
+  simplecov
+
+BUNDLED WITH
+   2.2.15
