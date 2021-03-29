@@ -18,7 +18,7 @@ bare demo.schema demo.py
 # Run ruby / python scripts
 
 ./compat.rb ruby.bin
-./compat.py python.bin
+python3 ./compat.py python.bin
 
 if cmp ruby.bin python.bin; then
   echo "Ruby and python implementations match!"

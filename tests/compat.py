@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import bare
 import sys
 from bare.bare_ast import TypeKind, BarePrimitive, StructType, OptionalType, NamedType, ArrayType, MapType, UnionType, UnionValue
