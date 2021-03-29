@@ -11,22 +11,19 @@ jobs:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - sudo python3.8 -m easy_install
-        - tests/ci.sh
+        - sudo tests/ci.sh
     - rvm: 2.6
 
       script:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - sudo python3.8 -m easy_install
-        - tests/ci.sh
+        - sudo tests/ci.sh
     - rvm: 2.5
 
       script:
         - python3.8 --version
         - python3.8 -m pip install setuptools
         - ruby -v
-        - sudo python3.8 -m easy_install
-        - tests/ci.sh
+        - sudo tests/ci.sh
 
