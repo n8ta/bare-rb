@@ -1,0 +1,32 @@
+#!/bin/sh
+
+echo "START"
+clean_up() {
+  rm ruby.bin
+  rm python.bin
+}
+
+# cd into tests directory and install bare-py
+cd $1 # from ./ci.rb
+cd "bare-py"
+python3 setup.py install > /dev/null
+cd ..
+
+# Generate python classes
+bare demo.schema demo.py
+
+# Run ruby / python scripts
+
+./compat.rb ruby.bin
+./compat.py python.bin
+
+if cmp ruby.bin python.bin; then
+  echo "Ruby and python implementations match!"
+  clean_up
+  exit 0
+else
+  >&2 echo "Ruby and python bare implementations do not match"
+  clean_up
+  exit 255
+fi
+
