@@ -7,15 +7,18 @@ jobs:
       python: 3
       script:
         - ruby -v
+        - sudo apt-get install python3-pip
         - tests/ci.sh
     - rvm: 2.6
       python: 3
       script:
         - ruby -v
+        - sudo apt-get install python3-pip
         - tests/ci.sh
     - rvm: 2.5
       python: 3
       script:
         - ruby -v
+        - sudo apt-get install python3-pip
         - tests/ci.sh
 
