@@ -351,20 +351,3 @@ Occurs when an enum is passed two keys with the same value ie `{ 0 => :abc, 1 =>
 
 ### SchemaMismatch
 Occurs in many cases when the data provided to encode doesn't match the schema.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Todo List
-1. **Lexer and Parser for schema language**
