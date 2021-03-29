@@ -6,3 +6,8 @@ script:
   - gem install simplecov
   - pip3 install setuptools
   - ruby tests/ci.rb
+
+addons:
+  apt:
+    packages:
+      - python3-pip
