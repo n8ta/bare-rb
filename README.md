@@ -2,6 +2,10 @@
 ![Build Status on Travis CI](https://api.travis-ci.com/n8ta/bare-rb.svg?branch=master)
 [![Coverage Status on Coveralls](https://coveralls.io/repos/github/n8ta/bare-rb/badge.svg?branch=master)](https://coveralls.io/github/n8ta/bare-rb?branch=master)
 
+![Ruby 2.7](https://img.shields.io/badge/Ruby-2.5-brightgreen)
+![Ruby 2.7](https://img.shields.io/badge/Ruby-2.6-brightgreen)
+![Ruby 2.7](https://img.shields.io/badge/Ruby-2.7-brightgreen)
+
 Implementation of the [Bare message protocol](https://baremessages.org/) in Ruby
 
 BARE is a simple efficient binary encoding. It's primary advantage over json
@@ -90,8 +94,10 @@ msg == decoded
 # True
 ```
 
-# Compatibility
-Ruby >= 2.7.0
+# Compatiblity
+- Ruby 2.7
+- Ruby 2.6
+- Ruby 2.5
 
 # Type Examples & Documentation
 1. [uint](#uint)
