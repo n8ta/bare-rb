@@ -4,17 +4,17 @@ dist: xenial
 jobs:
   include:
     - rvm: 2.7
-      python: 3
+      python: 3.7
       script:
         - ruby -v
         - tests/ci.sh
     - rvm: 2.6
-      python: 3
+      python: 3.7
       script:
         - ruby -v
         - tests/ci.sh
     - rvm: 2.5
-      python: 3
+      python: 3.7
       script:
         - ruby -v
         - tests/ci.sh
