@@ -287,7 +287,7 @@ class BareTypes
 
     def decode(msg)
       dataSize, rest = Uint.new.decode(msg)
-      return rest[0..dataSize - 1], rest[dataSize..rest]
+      return rest[0..dataSize - 1], rest[dataSize..rest.size]
     end
   end
 
