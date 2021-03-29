@@ -1,11 +1,8 @@
 language: python
 script:
+  - sudo apt-get update
+  - sudo apt-get install ruby2.7
   - gem install coveralls
   - gem install simplecov
   - pip3 install setuptools
   - ruby tests/ci.rb
-
-addons:
-  apt:
-    packages:
-      - ruby2.7
