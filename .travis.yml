@@ -1,6 +1,4 @@
-language: ruby
-rvm:
-  - 2.7
+language: python
 script:
   - gem install coveralls
   - gem install simplecov
@@ -10,5 +8,4 @@ script:
 addons:
   apt:
     packages:
-      - python3
-      - python3-pip
+      - ruby2.7
