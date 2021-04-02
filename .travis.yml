@@ -26,6 +26,8 @@ jobs:
         - cd tests
         - bundle
         - cd ..
+        - gem list
+        - gem env
         - sudo ruby tests/ci.rb
 
     - rvm: 2.5
