@@ -7,8 +7,6 @@ file_path2 = sys.argv[2]
 
 from demo import Customer, Address, Employee, Department, Time, PublicKey
 
-
-
 address = Address()
 address.address = ["Address line 1", "", "", ""]
 address.city = "The big city"
@@ -43,6 +41,8 @@ emp.metadata = {
     'ssh': b'jafsl8dfaf2',
     'gpg': b'jofa8f2jdlasfj8'
 }
+
+
 
 with open(file_path1, 'wb') as handle:
     handle.write(customer.pack())
