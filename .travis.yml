@@ -8,6 +8,7 @@ jobs:
   include:
     - rvm: 2.7
       script:
+        - compgen -c
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
@@ -19,6 +20,7 @@ jobs:
 
     - rvm: 2.6
       script:
+        - compgen -c 
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
@@ -32,6 +34,7 @@ jobs:
 
     - rvm: 2.5
       script:
+        - compgen -c
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
