@@ -15,7 +15,7 @@ jobs:
         - gem install bundler -v 2.2.15
         - cd tests
         - bundle
-        - bundle exec ruby ci.rb
+        - bundle exec ruby ./ci.rb
 
     - rvm: 2.6
       script:
@@ -23,7 +23,7 @@ jobs:
         - gem install bundler -v 2.2.15
         - cd tests
         - bundle
-        - bundle exec ruby ci.rb
+        - bundle exec ruby ./ci.rb
 
     - rvm: 2.5
       script:
@@ -31,5 +31,5 @@ jobs:
         - gem install bundler -v 2.2.15
         - cd tests
         - bundle
-        - bundle exec ruby ci.rb
+        - bundle exec ruby ./ci.rb
 
