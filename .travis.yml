@@ -9,30 +9,22 @@ before_install:
   - cd tests/bare-py
   - sudo python3 setup.py install > /dev/null
   - cd ../..
+  - ruby -v
+  - gem install bundler -v 2.2.15
+  - cd tests
+  - bundle
 
 jobs:
   include:
     - rvm: 2.7
       script:
-        - ruby -v
-        - gem install bundler -v 2.2.15
-        - cd tests
-        - bundle
         - bundle exec ruby ./ci.rb
 
     - rvm: 2.6
       script:
-        - ruby -v
-        - gem install bundler -v 2.2.15
-        - cd tests
-        - bundle
         - bundle exec ruby ./ci.rb
 
     - rvm: 2.5
       script:
-        - ruby -v
-        - gem install bundler -v 2.2.15
-        - cd tests
-        - bundle
         - bundle exec ruby ./ci.rb
 
