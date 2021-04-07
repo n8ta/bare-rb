@@ -15,7 +15,7 @@ jobs:
         - cd tests
         - bundle
         - cd ..
-        - sudo ruby tests/ci.rb
+        - sudo ruby2.7 tests/ci.rb
 
     - rvm: 2.6
       script:
@@ -28,7 +28,7 @@ jobs:
         - cd ..
         - gem list
         - gem env
-        - sudo ruby tests/ci.rb
+        - sudo ruby2.6 tests/ci.rb
 
     - rvm: 2.5
       script:
@@ -39,5 +39,5 @@ jobs:
         - cd tests
         - bundle
         - cd ..
-        - sudo ruby tests/ci.rb
+        - sudo ruby2.5 tests/ci.rb
 
