@@ -14,6 +14,7 @@ jobs:
         - gem install rubygems-bundler
         - cd tests
         - bundle
+        - gem regenerate_binstubs
         - sudo ruby ci.rb
 
     - rvm: 2.6
@@ -24,6 +25,7 @@ jobs:
         - gem install rubygems-bundler
         - cd tests
         - bundle
+        - gem regenerate_binstubs
         - sudo ruby ci.rb
 
     - rvm: 2.5
@@ -34,5 +36,6 @@ jobs:
         - gem install rubygems-bundler
         - cd tests
         - bundle
+        - gem regenerate_binstubs
         - sudo ruby ci.rb
 
