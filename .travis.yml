@@ -2,8 +2,8 @@ language: ruby
 os: linux
 dist: focal
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install python3.8
+  - apt-get update
+  - apt-get install python3.8
 jobs:
   include:
     - rvm: 2.7
@@ -14,7 +14,7 @@ jobs:
         - gem install bundler -v 2.2.15
         - cd tests
         - bundle
-        - sudo bundle exec ruby tests/ci.rb
+        - bundle exec ruby tests/ci.rb
 
     - rvm: 2.6
       script:
@@ -26,7 +26,7 @@ jobs:
         - bundle
         - gem list
         - gem env
-        - sudo bundle exec ruby tests/ci.rb
+        - bundle exec ruby tests/ci.rb
 
     - rvm: 2.5
       script:
@@ -36,5 +36,5 @@ jobs:
         - gem install bundler -v 2.2.15
         - cd tests
         - bundle
-        - sudo bundle exec ruby tests/ci.rb
+        - bundle exec ruby tests/ci.rb
 
