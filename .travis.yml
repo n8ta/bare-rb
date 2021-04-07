@@ -11,31 +11,30 @@ jobs:
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
-        - gem install rubygems-bundler
+        - gem install bundler -v 2.2.15
         - cd tests
         - bundle
-        - gem regenerate_binstubs
-        - sudo ruby ci.rb
+        - sudo bundle exec ruby tests/ci.rb
 
     - rvm: 2.6
       script:
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
-        - gem install rubygems-bundler
+        - gem install bundler -v 2.2.15
         - cd tests
         - bundle
-        - gem regenerate_binstubs
-        - sudo ruby ci.rb
+        - gem list
+        - gem env
+        - sudo bundle exec ruby tests/ci.rb
 
     - rvm: 2.5
       script:
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
-        - gem install rubygems-bundler
+        - gem install bundler -v 2.2.15
         - cd tests
         - bundle
-        - gem regenerate_binstubs
-        - sudo ruby ci.rb
+        - sudo bundle exec ruby tests/ci.rb
 
