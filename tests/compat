@@ -8,12 +8,6 @@ clean_up() {
   rm python.bin2
 }
 
-# cd into tests directory and install bare-py
-cd $1 # from ./ci.rb
-cd "bare-py"
-python3 setup.py install > /dev/null
-cd ..
-
 # Generate python classes
 bare demo.schema demo.py
 
