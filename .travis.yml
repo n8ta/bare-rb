@@ -8,39 +8,31 @@ jobs:
   include:
     - rvm: 2.7
       script:
-        - compgen -A function -abck
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
-        - gem install bundler -v 2.2.15
+        - gem install rubygems-bundler
         - cd tests
         - bundle
-        - cd ..
-        - sudo ruby2.7 tests/ci.rb
+        - sudo ruby ci.rb
 
     - rvm: 2.6
       script:
-        - compgen -A function -abck
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
-        - gem install bundler -v 2.2.15
+        - gem install rubygems-bundler
         - cd tests
         - bundle
-        - cd ..
-        - gem list
-        - gem env
-        - sudo ruby2.6 tests/ci.rb
+        - sudo ruby ci.rb
 
     - rvm: 2.5
       script:
-        - compgen -A function -abck
         - python3 --version
         - python3 -m pip install setuptools
         - ruby -v
-        - gem install bundler -v 2.2.15
+        - gem install rubygems-bundler
         - cd tests
         - bundle
-        - cd ..
-        - sudo ruby2.5 tests/ci.rb
+        - sudo ruby ci.rb
 
