@@ -10,8 +10,10 @@ before_install:
   - sudo python3 setup.py install > /dev/null
   - cd ../..
   - ruby -v
+  - cd tests
   - gem install bundler -v 2.2.15
   - bundle
+  - cd ..
 
 
 jobs:
