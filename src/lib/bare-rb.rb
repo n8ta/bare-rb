@@ -5,22 +5,24 @@ require_relative "parser"
 
 class Bare
   def self.encode(msg, schema, type=nil)
+    buffer = "".b
     if schema.is_a?(Bare::Schema)
       raise NoTypeProvided("To encode with a schema as opposed to a raw type you must specify which type in the schema you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
-      schema[type].encode(msg)
+      schema[type].encode(msg, buffer)
     else
-      schema.encode(msg)
+      schema.encode(msg, buffer)
     end
+    buffer
   end
 
   def self.decode(msg, schema, type=nil)
     if schema.is_a?(Bare::Schema)
       raise NoTypeProvided("To decode with a schema as opposed to a raw type you must specify which type in the same you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
-      value, rest = schema[type].decode(msg)
+      value, _ = schema[type].decode(msg)
       value
     else
-      value, rest = schema.decode(msg)
-      return value
+      value, _ = schema.decode(msg)
+      value
     end
   end
 

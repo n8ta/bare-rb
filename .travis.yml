@@ -11,7 +11,6 @@ before_install:
   - cd ../..
   - ruby -v
   - gem install bundler -v 2.2.15
-  - cd tests
   - bundle
 
 jobs:

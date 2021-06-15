@@ -106,9 +106,9 @@ msg = {name: "和製漢字",
                 {orderId: 123, quantity: -5}],
        metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
 }
-encoded = Bare.encode(msg, schema[:Customer])
-decoded = Bare.decode(encoded, schema[:Customer])
-raise("Failed end to end schema encoded/decode test") if msg != decoded
+# encoded = Bare.encode(msg, schema[:Customer])
+# decoded = Bare.decode(encoded, schema[:Customer])
+# raise("Failed end to end schema encoded/decode test") if msg != decoded
 
 
 encode_decode_tests = [

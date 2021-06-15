@@ -28,9 +28,9 @@ class BareTypes
   class Int < BarePrimitive
     # https://developers.google.com/protocol-buffers/docs/encoding
     # Easy to just convert to signed and re-use uint code
-    def encode(msg)
+    def encode(msg, buffer)
       mappedInteger = msg < 0 ? -2 * msg - 1 : msg * 2
-      return Uint.new.encode(mappedInteger)
+      Uint.new.encode(mappedInteger, buffer)
     end
 
     def decode(msg)
@@ -41,8 +41,8 @@ class BareTypes
   end
 
   class Void < BarePrimitive
-    def encode(msg)
-      return "".b
+    def encode(msg, buffer)
+      buffer << "".b
     end
 
     def decode(msg)
@@ -51,8 +51,8 @@ class BareTypes
   end
 
   class F32 < BarePrimitive
-    def encode(msg)
-      [msg].pack("e")
+    def encode(msg, buffer)
+      buffer << [msg].pack("e")
     end
 
     def decode(msg)
@@ -61,8 +61,8 @@ class BareTypes
   end
 
   class F64 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("E")
+    def encode(msg, buffer)
+      buffer << [msg].pack("E")
     end
 
     def decode(msg)
@@ -71,16 +71,14 @@ class BareTypes
   end
 
   class String < BarePrimitive
-    def encode(msg)
-      encodedString = nil
+    def encode(msg, buffer)
       begin
         encodedString = msg.encode("UTF-8").b
       rescue Encoding::UndefinedConversionError => error
         raise error.class, "Unable to convert string to UTF-8=, BARE strings are encoded as UTF8. If you can't convert your string to UTF-8 you can encode it with binary data"
       end
-      bytes = Uint.new.encode(encodedString.size)
-      bytes << encodedString
-      return bytes
+      Uint.new.encode(encodedString.size, buffer)
+      buffer << encodedString
     end
 
     def decode(msg)
@@ -114,13 +112,12 @@ class BareTypes
       @optionalType = optionalType
     end
 
-    def encode(msg)
+    def encode(msg, buffer)
       if msg.nil?
-        return "\x00".b
+        buffer << "\x00".b
       else
-        bytes = "\x01".b
-        bytes << @optionalType.encode(msg)
-        return bytes
+        buffer << "\x01".b
+        @optionalType.encode(msg, buffer)
       end
     end
 
@@ -167,18 +164,18 @@ class BareTypes
       @to
     end
 
-    def encode(msg)
-      bytes = Uint.new.encode(msg.size)
+    def encode(msg, buffer)
+      Uint.new.encode(msg.size, buffer)
       msg.each do |from, to|
-        bytes << @from.encode(from)
-        bytes << @to.encode(to)
+        @from.encode(from, buffer)
+        @to.encode(to, buffer)
       end
-      return bytes
     end
 
     def decode(msg)
       hash = Hash.new
       mapSize, rest = Uint.new.decode(msg)
+      # (0..mapSize).each do
       (mapSize - 1).to_i.downto(0) do
         key, rest = @from.decode(rest)
         value, rest = @to.decode(rest)
@@ -211,7 +208,7 @@ class BareTypes
       @intToType.each do |int, type|
         return false unless type == otherType.intToType[int]
       end
-      return true
+      true
     end
 
     def initialize(intToType)
@@ -222,7 +219,7 @@ class BareTypes
       @intToType = intToType
     end
 
-    def encode(msg)
+    def encode(msg, buffer)
       type = msg[:type]
       value = msg[:value]
       unionTypeInt = nil
@@ -235,9 +232,8 @@ class BareTypes
         end
       end
       raise SchemaMismatch("Unable to find given type in union: #{@intToType.inspect}, type: #{type}") if unionType.nil? || unionTypeInt.nil?
-      bytes = Uint.new.encode(unionTypeInt)
-      encoded = unionType.encode(value)
-      bytes << encoded
+      Uint.new.encode(unionTypeInt, buffer)
+      unionType.encode(value, buffer)
     end
 
     def decode(msg)
@@ -254,7 +250,7 @@ class BareTypes
     end
 
     def length
-      return @length
+      @length
     end
 
     def finalize_references(schema)
@@ -265,14 +261,15 @@ class BareTypes
       @length = length
     end
 
-    def encode(msg)
+    def encode(msg, buffer)
       if msg.size != @length
         raise FixedDataSizeWrong.new("Message is not proper sized for DataFixedLen should have been #{@length} but was #{msg.size}")
       end
-      msg
+      buffer << msg
     end
 
     def decode(msg)
+      # TODO: Is this allocating new strings? 
       return msg[0..@length], msg[@length..msg.size]
     end
   end
@@ -282,10 +279,9 @@ class BareTypes
     def finalize_references(schema)
     end
 
-    def encode(msg)
-      bytes = Uint.new.encode(msg.size)
-      bytes << msg
-      return bytes
+    def encode(msg, buffer)
+      Uint.new.encode(msg.size, buffer)
+      buffer << msg
     end
 
     def decode(msg)
@@ -299,7 +295,7 @@ class BareTypes
     def finalize_references(schema)
     end
 
-    def encode(msg)
+    def encode(msg, buffer)
       bytes = "".b
       _get_next_7_bits_as_byte(msg, 128) do |byte|
         bytes << byte
@@ -313,7 +309,7 @@ class BareTypes
       end
       bytes[bytes.size - 1] = [bytes.bytes[bytes.size - 1] & 127].pack('C')[0]
       raise MaximumSizeError("Maximum u/int allowed is 64 bit precision") if bytes.size > 9
-      return bytes
+      buffer << bytes
     end
 
     def decode(msg)
@@ -334,8 +330,8 @@ class BareTypes
   end
 
   class U8 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("C")
+    def encode(msg, buffer)
+      buffer << [msg].pack("C")
     end
 
     def decode(msg)
@@ -344,8 +340,8 @@ class BareTypes
   end
 
   class U16 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("v")
+    def encode(msg, buffer)
+      buffer << [msg].pack("v")
     end
 
     def decode(msg)
@@ -354,8 +350,8 @@ class BareTypes
   end
 
   class U32 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("V")
+    def encode(msg, buffer)
+      buffer << [msg].pack("V")
     end
 
     def decode(msg)
@@ -364,8 +360,8 @@ class BareTypes
   end
 
   class U64 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("Q")
+    def encode(msg, buffer)
+      buffer << [msg].pack("Q")
     end
 
     def decode(msg)
@@ -374,8 +370,8 @@ class BareTypes
   end
 
   class I8 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("c")
+    def encode(msg, buffer)
+      buffer << [msg].pack("c")
     end
 
     def decode(msg)
@@ -384,8 +380,8 @@ class BareTypes
   end
 
   class I16 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("s<")
+    def encode(msg, buffer)
+      buffer << [msg].pack("s<")
     end
 
     def decode(msg)
@@ -394,8 +390,8 @@ class BareTypes
   end
 
   class I32 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("l<")
+    def encode(msg, buffer)
+      buffer << [msg].pack("l<")
     end
 
     def decode(msg)
@@ -404,8 +400,8 @@ class BareTypes
   end
 
   class I64 < BarePrimitive
-    def encode(msg)
-      return [msg].pack("q<")
+    def encode(msg, buffer)
+      buffer << [msg].pack("q<")
     end
 
     def decode(msg)
@@ -414,8 +410,8 @@ class BareTypes
   end
 
   class Bool < BarePrimitive
-    def encode(msg)
-      return msg ? "\xFF\xFF".b : "\x00\x00".b
+    def encode(msg, buffer)
+      buffer << (msg ? "\xFF\xFF".b : "\x00\x00".b)
     end
 
     def decode(msg)
@@ -467,13 +463,11 @@ class BareTypes
       @mapping = symbolToType
     end
 
-    def encode(msg)
-      bytes = "".b
+    def encode(msg, buffer)
       @mapping.keys.each do |symbol|
         raise SchemaMismatch.new("All struct fields must be specified, missing: #{symbol.inspect}") unless msg.keys.include?(symbol)
-        bytes << @mapping[symbol].encode(msg[symbol])
+        @mapping[symbol].encode(msg[symbol], buffer)
       end
-      return bytes
     end
 
     def decode(msg)
@@ -489,11 +483,11 @@ class BareTypes
 
   class Array < BaseType
     def ==(otherType)
-      return otherType.class == BareTypes::Array && otherType.type == self.type
+      otherType.class == BareTypes::Array && otherType.type == self.type
     end
 
     def type
-      return @type
+      @type
     end
 
     def finalize_references(schema)
@@ -511,12 +505,11 @@ class BareTypes
       @type = type
     end
 
-    def encode(msg)
-      bytes = Uint.new.encode(msg.size)
+    def encode(msg, buffer)
+      Uint.new.encode(msg.size, buffer)
       msg.each do |item|
-        bytes << @type.encode(item)
+        @type.encode(item, buffer)
       end
-      return bytes
     end
 
     def decode(msg)
@@ -563,13 +556,11 @@ class BareTypes
       @size
     end
 
-    def encode(arr)
+    def encode(arr, buffer)
       raise SchemaMismatch.new("This FixLenArray is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
-      bytes = ""
       arr.each do |item|
-        bytes << @type.encode(item)
+        @type.encode(item, buffer)
       end
-      return bytes
     end
 
     def decode(rest)
@@ -612,11 +603,10 @@ class BareTypes
       end
     end
 
-    def encode(msg)
+    def encode(msg, buffer)
       raise SchemaMismatch.new("#{msg.inspect} is not part of this enum: #{@intToVal}") if !@valToInt.keys.include?(msg)
       integerRep = @valToInt[msg]
-      encoded = BareTypes::Uint.new.encode(integerRep)
-      return encoded
+      BareTypes::Uint.new.encode(integerRep, buffer)
     end
 
     def decode(msg)
@@ -624,6 +614,7 @@ class BareTypes
       return @intToVal[value], rest
     end
   end
+
 end
 
 def _get_next_7_bits_as_byte(integer, base = 128)

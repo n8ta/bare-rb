@@ -99,6 +99,21 @@ msg == decoded
 - Ruby 2.6
 - Ruby 2.5
 
+# semver 
+All public interfaces are semantically versioned. The major version number will be bumped if I change them.
+
+The public interfaces are 
+1. Bare.encode
+2. Bare.decode
+3. Bare.parse_schema
+4. BareException (base exception class)
+5. Bare.Int, Bare.Struct etc...
+
+There are internal encode/decodes one each class like int and struct. They could change without notice. Use Bare.encode/decode.
+
+The 1.0 release is not to signal completeness (though it's fairly complete) but to introduce 
+semver and make the project's interface clear. 
+
 # Type Examples & Documentation
 1. [uint](#uint)
 2. [int](#int)

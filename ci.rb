@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 require 'coveralls'
 require 'simplecov'
 
@@ -6,7 +7,7 @@ Coveralls.wear!
 SimpleCov.command_name 'Custom BARE Test Script'
 puts "Calling tests.rb script"
 
-require_relative './tests.rb'
+require_relative 'tests/tests.rb'
 
 puts "Calling bare-py to test interoperability"
 
