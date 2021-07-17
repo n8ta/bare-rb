@@ -10,8 +10,9 @@ puts "Calling tests.rb script"
 require_relative 'tests/tests.rb'
 
 puts "Calling bare-py to test interoperability"
-compat_tests_dir = File.join(__dir__, "compat_tests")
-compat = File.join(compat_tests_dir, "combat")
+compat_tests_dir = File.join(__dir__, "tests", "compat_tests")
+compat = File.join(compat_tests_dir, "compat")
 
-system("#{compat} #{__dir__}", chdir: compat_tests_dir) || exit(-1)
-
+Dir.chdir(compat_tests_dir){
+  %x[#{compat}]
+}

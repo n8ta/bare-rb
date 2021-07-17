@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative '../src/lib/bare-rb'
+require_relative '../../src/lib/bare-rb'
 
 file_path_1 = ARGV[0]
 file_path_2 = ARGV[1]
