@@ -9,6 +9,32 @@ class BareTypes
     end
   end
 
+  # Used to represent a Type reference in a schema.
+  # eg. test8.schema's  address field on Customer contains 'Address'
+  # a reference to the Address type defined earlier.
+  class Reference < BaseType
+    attr_accessor :name
+    attr_accessor :ref
+    def ==(other)
+      other.is_a?(Reference) && @name == other.name && @ref == other.ref
+    end
+    def initialize(name, reference)
+      @name = name
+      @ref = reference
+    end
+    def finalize_references(schema)
+      raise BareException("This is a bug in the bare-rb library please report it on github.")
+    end
+    def encode(msg, buffer)
+      @ref.encode(msg, buffer)
+    end
+
+    def decode(msg)
+      @ref.decode(msg)
+    end
+
+  end
+
   class BarePrimitive < BaseType
 
     # Types which are always equivalent to another instantiation of themselves
@@ -97,7 +123,7 @@ class BareTypes
       return if @finalized
       @finalized = true
       if @optionalType.is_a?(Symbol)
-        @optionalType = schema[@optionalType]
+        @optionalType = Reference.new(@optionalType, schema[@optionalType])
       else
         @optionalType.finalize_references(schema)
       end
@@ -139,7 +165,7 @@ class BareTypes
       return if @finalized
       @finalized = true
       if @from.is_a?(Symbol)
-        @to = schema[@to]
+        @to = Reference.new(@from, schema[@to])
       else
         @to.finalize_references(schema)
       end
@@ -196,7 +222,7 @@ class BareTypes
       @finalized = true
       @intToType.keys.each do |key|
         if @intToType[key].is_a?(Symbol)
-          @intToType[key] = schema[@intToType[key]]
+          @intToType[key] = Reference.new(@intToType[key], schema[@intToType[key]])
         else
           @intToType[key].finalize_references(schema)
         end
@@ -441,7 +467,8 @@ class BareTypes
       @finalized = true
       @mapping.each do |key, val|
         if val.is_a?(Symbol)
-          @mapping[key] = schema[val]
+          @mapping[key] = Reference.new(val, schema[val])
+          @mapping[key].ref.finalize_references(schema)
         else
           val.finalize_references(schema)
         end
@@ -538,7 +565,7 @@ class BareTypes
       return if @finalized
       @finalized = true
       if @type.is_a?(Symbol)
-        @type = schema[@type]
+        @type = Reference.new(@type, schema[@type])
       else
         @type.finalize_references(schema)
       end

@@ -27,10 +27,10 @@ class Bare
   end
 
   def self.parse_schema(path)
-    # Hash of class names to BARE ASTs
+    # Hash of class names to BARE types
     # Eg. types['Customer'] == Bare.i32
-    types = parser(lexer(path))
-    Bare.Schema(types)
+    parsed = parser(lexer(path))
+    Bare.Schema(parsed)
   end
 
   def self.Schema(hash)
@@ -53,9 +53,10 @@ class Bare
 
     def initialize(types)
       @types = types
+      @types_raw = types # Types but :symbols instead of actual references, useful for serializing back to a schema file
       @types.keys.each do |key|
         if @types[key].is_a?(Symbol)
-          @types[key] = @types[@types[key]]
+          @types[key] = BareTypes::Reference(key, @types[@types[key]])
         else
           # Users may use symbols to reference not yet defined types
           # here we recursively call our bare classes to finalize their types

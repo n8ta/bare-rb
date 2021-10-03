@@ -315,7 +315,7 @@ class TestBare < Minitest::Test
       metadata: Bare.Map(Bare.String, Bare.Data)
     }
     test_7 = {PublicKey: Bare.DataFixedLen(128)}
-    test_7[:Customer] = Bare.Struct({pubKey: test_7[:PublicKey]})
+    test_7[:Customer] = Bare.Struct({pubKey: :PublicKey})
     test_8 = {
       PublicKey: Bare.DataFixedLen(128),
       Time: Bare.String,
@@ -358,6 +358,7 @@ class TestBare < Minitest::Test
       {file: "./schemas/test7.schema", ast: test_7},
       {file: "./schemas/test8.schema", ast: test_8},
     ]
+
 
     lexing_tests.each_with_index do |test, i|
       path = rel_path(test[:file])

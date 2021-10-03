@@ -132,7 +132,7 @@ class Parser
         type = @primitives[tokens[0]]
         return tokens[1..tokens.size], type
       elsif @definitions.keys.include?(tokens[0].to_sym) # User defined type
-        return tokens[1..tokens.size], @definitions[tokens[0].to_sym]
+        return tokens[1..tokens.size], tokens[0].to_sym
       elsif tokens[0].is_a?(String) && tokens[0][0].upcase == tokens[0][0] # Not yet defined user type
         return tokens[1..tokens.size], tokens[0].to_sym
       else
