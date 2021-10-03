@@ -5,6 +5,7 @@
 ![Ruby 2.5](https://img.shields.io/badge/Ruby-2.5-brightgreen)
 ![Ruby 2.6](https://img.shields.io/badge/Ruby-2.6-brightgreen)
 ![Ruby 2.7](https://img.shields.io/badge/Ruby-2.7-brightgreen)
+![Ruby 2.7](https://img.shields.io/badge/Ruby-3.0.2-brightgreen)
 
 Implementation of the [Bare message protocol](https://baremessages.org/) in Ruby
 

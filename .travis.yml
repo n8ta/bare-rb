@@ -18,7 +18,7 @@ before_install:
 
 jobs:
   include:
-    - rvm: 3
+    - rvm: 3.0.2
       script:
         - bundle exec ruby ./ci.rb
 
