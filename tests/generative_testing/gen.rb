@@ -9,6 +9,7 @@ class BareTypes::U8
   def self.make
     BareTypes::U8.new
   end
+
   def create_input
     rand(256)
   end
@@ -18,6 +19,7 @@ class BareTypes::Array
   def self.make
     BareTypes::Array.new(get_type)
   end
+
   def create_input
     count = rand(50)
     arr = []
@@ -32,22 +34,30 @@ class BareTypes::F32
   def self.make
     self.new
   end
+
   def create_input
-    rand(1000).to_f
+    float = nil
+    loop do
+      input = [rand(266), rand(266), rand(266), rand(266)]
+      float = input.pack("cccc").unpack('e')
+      if float == float
+        break
+      end
+    end
+    float
   end
 end
 
 loop do
-  
   typ = get_type
   input = typ.create_input
   binary = Bare.encode(input, typ)
   output = Bare.decode(binary, typ)
   if input != output
+    s
     puts "ALERT", input, output, typ
   end
 end
-
 
 # Int
 # Void
