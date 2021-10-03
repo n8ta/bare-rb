@@ -1,6 +1,5 @@
 #!/bin/sh
 
-echo "START"
 clean_up() {
   rm ruby.bin1
   rm ruby.bin2

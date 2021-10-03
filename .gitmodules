@@ -1,0 +1,3 @@
+[submodule "/Users/n8ta/code/bare/tests/bare-py"]
+	path = /Users/n8ta/code/bare/tests/bare-py
+	url = https://git.sr.ht/~martijnbraam/bare-py

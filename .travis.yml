@@ -3,13 +3,13 @@ os: linux
 dist: focal
 before_install:
   - sudo apt-get update
-#  - sudo apt-get install python3.8
-#  - python3 --version
-#  - python3 -m pip install setuptools
-#  - cd tests/bare-py
-#  - sudo python3 setup.py install > /dev/null
-#  - cd ../..
-#  - ruby -v
+  - sudo apt-get install python3.8
+  - python3 --version
+  - python3 -m pip install setuptools
+  - cd tests/bare-py
+  - sudo python3 setup.py install > /dev/null
+  - cd ../..
+  - ruby -v
   - cd tests
   - gem install bundler -v 2.2.15
   - bundle

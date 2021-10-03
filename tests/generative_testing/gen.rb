@@ -3,7 +3,6 @@ require_relative '../../src/lib/bare-rb'
 def get_type
   types = [BareTypes::Array, BareTypes::U8, BareTypes::F32]
   types[rand(types.size)].make
-
 end
 
 class BareTypes::U8
@@ -35,7 +34,6 @@ class BareTypes::F32
   end
   def create_input
     rand(1000).to_f
-    # [rand(266), rand(266), rand(266), rand(266)].pack("e")
   end
 end
 
