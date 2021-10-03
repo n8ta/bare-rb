@@ -411,18 +411,21 @@ class BareTypes
 
   class Bool < BarePrimitive
     def encode(msg, buffer)
-      buffer << (msg ? "\xFF\xFF".b : "\x00\x00".b)
+      buffer << (msg ? "\x00".b : "\x01".b)
     end
 
     def decode(msg)
-      return (msg == "\x00\x00" ? false : true), msg[1..msg.size]
+      if msg != "\x00" && msg != "\x01"
+        raise InvalidBool.new("Expected a bool but found #{msg.inspect}. Standard requires bool to be 0x00 or 0x01")
+      end
+      return (msg == "\x00" ? true : false), msg[1..msg.size]
     end
   end
 
   class Struct < BaseType
 
     def [](key)
-      return @mapping[key]
+      @mapping[key]
     end
 
     def ==(otherType)
@@ -430,7 +433,7 @@ class BareTypes
       @mapping.each do |k, v|
         return false unless otherType.mapping[k] == v
       end
-      return true
+      true
     end
 
     def finalize_references(schema)

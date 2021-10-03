@@ -366,3 +366,6 @@ Occurs when an enum is passed two keys with the same value ie `{ 0 => :abc, 1 =>
 
 ### SchemaMismatch
 Occurs in many cases when the data provided to encode doesn't match the schema.
+
+### InvalidBool
+Bools can only be encoded as a single byte of exactly 0x00 or 0x01. Anything else is an error. 
