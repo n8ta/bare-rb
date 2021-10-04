@@ -1,85 +1,41 @@
 require_relative '../../src/lib/bare-rb'
+require_relative './monkey_patch'
+require_relative './grammar_util'
 
-def get_type
-  types = [BareTypes::Array, BareTypes::U8, BareTypes::F32]
-  types[rand(types.size)].make
-end
-
-class BareTypes::U8
-  def self.make
-    BareTypes::U8.new
+def get_type(depth, names = [], can_be_symbol = true)
+  if names.size == 0
+    can_be_symbol = false
   end
+  terminators = [BareTypes::Data, BareTypes::DataFixedLen,
+                 BareTypes::U8, BareTypes::U16, BareTypes::U32, BareTypes::U64,
+                 BareTypes::I8, BareTypes::I16, BareTypes::I32, BareTypes::I64,
+                 BareTypes::F32, BareTypes::F64]
+  aggregates = [BareTypes::Array, BareTypes::ArrayFixedLen,
+                BareTypes::Struct]
 
-  def create_input
-    rand(256)
-  end
-end
+  all = terminators + aggregates
 
-class BareTypes::Array
-  def self.make
-    BareTypes::Array.new(get_type)
-  end
-
-  def create_input
-    count = rand(50)
-    arr = []
-    0.upto(count) do
-      arr << @type.create_input
-    end
-    arr
-  end
-end
-
-class BareTypes::F32
-  def self.make
-    self.new
-  end
-
-  def create_input
-    float = nil
-    loop do
-      input = [rand(266), rand(266), rand(266), rand(266)]
-      float = input.pack("cccc").unpack('e')
-      if float == float
-        break
+  # 1/5 changes of a reference
+  x = if rand(5) == 0 && names.size != 1
+        names[rand(names.size)]
+      elsif depth >= 10 # if depth >= 10 only use terminating types
+        all[rand(terminators.size)].make(depth+1, names)
+      else
+        # otherwise random type
+        all[rand(all.size)].make(depth+1, names)
       end
-    end
-    float
-  end
+  x
 end
 
-loop do
-  typ = get_type
-  input = typ.create_input
-  binary = Bare.encode(input, typ)
-  output = Bare.decode(binary, typ)
-  if input != output
-    s
-    puts "ALERT", input, output, typ
+def create_schema
+  names = []
+  schema = {}
+  0.upto(rand(5)) do
+    names << create_user_type_name.to_sym
   end
+  names.each do |name|
+    without_this_name = names.select {|n| n != name}
+    schema[name] = get_type(0, without_this_name, false)
+  end
+  Bare.Schema(schema)
 end
-
-# Int
-# Void
-# F32
-# F64
-# String
-# Union
-# Data
-# Uint
-# U8
-# U16
-# U32
-# U64
-# I8
-# I16
-# I32
-# I64
-# Bool
-# Optional
-# Map
-# DataFixedLen
-# Struct
-# Array
-# ArrayFixedLen
-# Enum

@@ -381,4 +381,12 @@ class TestBare < Minitest::Test
     decoded = Bare.decode(encoded, schema[:Customer])
     assert_equal msg, decoded, "Failed end to end schema encoded/decode test"
   end
+
+  def test_odd_schema
+    schema = Bare.parse_schema(rel_path("./schemas/test9.schema"))
+    input = { A: "\x01\x02\x03".b, B: "\x88".b }
+    binary = Bare.encode(input, schema[:TYP])
+    decoded = Bare.decode(binary, schema[:TYP])
+    assert_equal input, decoded
+  end
 end

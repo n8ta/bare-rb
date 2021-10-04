@@ -11,6 +11,12 @@ class InvalidBool < BareException
   end
 end
 
+class ReferenceException < BareException
+  def initialize(msg=nil)
+    super
+  end
+end
+
 class FixedDataSizeWrong < BareException
   def initialize(msg=nil)
     super

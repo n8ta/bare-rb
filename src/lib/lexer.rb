@@ -3,7 +3,8 @@ require_relative './exceptions'
 def lexer(path)
   tokens = []
   line_num = 0
-  File.open(path).each do |line|
+  file = File.open(path)
+  file.each do |line|
     while line.size > 0
       if /^#/.match(line)
         break
@@ -46,7 +47,7 @@ def lexer(path)
         tokens << match[0].to_i
         line = line[(match[0].size)..line.size]
         next
-      elsif match = /^[a-z,A-Z,_][_,a-z,A-Z,0-9]+/.match(line)
+      elsif match = /^[a-z,A-Z,_][_,a-z,A-Z,0-9]*/.match(line)
         tokens << match[0]
         line = line[(match[0].size)..line.size]
       elsif /:/.match(line)

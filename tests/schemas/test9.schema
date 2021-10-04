@@ -1,0 +1,4 @@
+type TYP {
+  A: data<3>
+  B: data
+}

@@ -15,22 +15,36 @@ class BareTypes
   class Reference < BaseType
     attr_accessor :name
     attr_accessor :ref
+
     def ==(other)
       other.is_a?(Reference) && @name == other.name && @ref == other.ref
     end
+
     def initialize(name, reference)
       @name = name
       @ref = reference
+      @finalized = false
+      unless reference.is_a?(BareTypes::BaseType)
+        raise ReferenceException.new("Reference must be to bare types")
+      end
     end
+
     def finalize_references(schema)
-      raise BareException("This is a bug in the bare-rb library please report it on github.")
+      return if @finalized
+      @finalized = true
+      self.ref.finalize_references(schema)
     end
+
     def encode(msg, buffer)
       @ref.encode(msg, buffer)
     end
 
     def decode(msg)
       @ref.decode(msg)
+    end
+
+    def to_schema(buffer)
+      @ref.to_schema(buffer)
     end
 
   end
@@ -46,7 +60,10 @@ class BareTypes
       self.class == other.class
     end
 
-    def finalize_references(schema)
+    def finalize_references(schema) end
+
+    def to_schema(buffer)
+      buffer << self.class.name.split('::').last.downcase
     end
 
   end
@@ -62,7 +79,7 @@ class BareTypes
     def decode(msg)
       value, rest = Uint.new.decode(msg)
       value = value.odd? ? (value + 1) / -2 : value / 2
-      return  value, rest
+      return value, rest
     end
   end
 
@@ -119,6 +136,12 @@ class BareTypes
       return otherType.class == BareTypes::Optional && otherType.optionalType == @optionalType
     end
 
+    def to_schema(buffer)
+      buffer << "optional<"
+      @optionalType.to_schema(buffer)
+      buffer << ">"
+    end
+
     def finalize_references(schema)
       return if @finalized
       @finalized = true
@@ -161,6 +184,13 @@ class BareTypes
       return otherType.class == BareTypes::Map && otherType.from == @from && otherType.to == @to
     end
 
+    def to_schema(buffer)
+      buffer << "map["
+      @from.to_schema(buffer)
+      buffer << "]"
+      @to.to_schema(buffer)
+    end
+
     def finalize_references(schema)
       return if @finalized
       @finalized = true
@@ -174,8 +204,8 @@ class BareTypes
     def initialize(fromType, toType)
       raise VoidUsedOutsideTaggedSet if fromType.class == BareTypes::Void or toType.class == BareTypes::Void
       if !fromType.class.ancestors.include?(BarePrimitive) ||
-          fromType.is_a?(BareTypes::Data) ||
-          fromType.is_a?(BareTypes::DataFixedLen)
+        fromType.is_a?(BareTypes::Data) ||
+        fromType.is_a?(BareTypes::DataFixedLen)
         raise MapKeyError("Map keys must use a primitive type which is not data or data<length>.")
       end
       @from = fromType
@@ -211,11 +241,8 @@ class BareTypes
     end
   end
 
-  class Union < BarePrimitive
-
-    def intToType
-      @intToType
-    end
+  class Union < BaseType
+    attr_accessor :intToType
 
     def finalize_references(schema)
       return if @finalized
@@ -245,6 +272,17 @@ class BareTypes
       @intToType = intToType
     end
 
+    def to_schema(buffer)
+      buffer << "("
+      strs = []
+      @intToType.size.times do
+        strs << ""
+      end
+      @intToType.values.each_with_index.map { |type, i| type.to_schema(strs[i]) }
+      buffer << strs.join(" | ")
+      buffer << ")"
+    end
+
     def encode(msg, buffer)
       type = msg[:type]
       value = msg[:value]
@@ -266,7 +304,7 @@ class BareTypes
       int, rest = Uint.new.decode(msg)
       type = @intToType[int]
       value, rest = type.decode(rest)
-      return {value: value, type: type}, rest
+      return { value: value, type: type }, rest
     end
   end
 
@@ -275,15 +313,18 @@ class BareTypes
       return otherType.class == BareTypes::DataFixedLen && otherType.length == self.length
     end
 
+    def to_schema(buffer)
+      buffer << "data<#{@length}>"
+    end
+
     def length
       @length
     end
 
-    def finalize_references(schema)
-    end
+    def finalize_references(schema) end
 
     def initialize(length)
-      raise MinimumSizeError("DataFixedLen must have a length greater than 0, got: #{length.inspect}") if length < 1
+      raise MinimumSizeError.new("DataFixedLen must have a length greater than 0, got: #{length.inspect}") if length < 1
       @length = length
     end
 
@@ -295,15 +336,13 @@ class BareTypes
     end
 
     def decode(msg)
-      # TODO: Is this allocating new strings? 
-      return msg[0..@length], msg[@length..msg.size]
+      return msg[0..@length-1], msg[@length..msg.size]
     end
   end
 
   class Data < BarePrimitive
 
-    def finalize_references(schema)
-    end
+    def finalize_references(schema) end
 
     def encode(msg, buffer)
       Uint.new.encode(msg.size, buffer)
@@ -318,8 +357,7 @@ class BareTypes
 
   class Uint < BarePrimitive
 
-    def finalize_references(schema)
-    end
+    def finalize_references(schema) end
 
     def encode(msg, buffer)
       bytes = "".b
@@ -334,7 +372,7 @@ class BareTypes
         end
       end
       bytes[bytes.size - 1] = [bytes.bytes[bytes.size - 1] & 127].pack('C')[0]
-      raise MaximumSizeError("Maximum u/int allowed is 64 bit precision") if bytes.size > 9
+      raise MaximumSizeError.new("Maximum u/int allowed is 64 bit precision") if bytes.size > 9
       buffer << bytes
     end
 
@@ -449,6 +487,7 @@ class BareTypes
   end
 
   class Struct < BaseType
+    attr_accessor :mapping
 
     def [](key)
       @mapping[key]
@@ -468,15 +507,15 @@ class BareTypes
       @mapping.each do |key, val|
         if val.is_a?(Symbol)
           @mapping[key] = Reference.new(val, schema[val])
-          @mapping[key].ref.finalize_references(schema)
+          begin
+            @mapping[key].ref.finalize_references(schema)
+          rescue NoMethodError => e
+            puts "err"
+          end
         else
           val.finalize_references(schema)
         end
       end
-    end
-
-    def mapping
-      @mapping
     end
 
     def initialize(symbolToType)
@@ -509,6 +548,17 @@ class BareTypes
       end
       return hash, rest
     end
+
+    def to_schema(buffer)
+      buffer << "{"
+      @mapping.each do |symbol, type|
+        buffer << "    #{symbol}: "
+        type.to_schema(buffer)
+        buffer << "\n"
+      end
+      buffer << "}"
+    end
+
   end
 
   class Array < BaseType
@@ -520,11 +570,16 @@ class BareTypes
       @type
     end
 
+    def to_schema(buffer)
+      buffer << "[]"
+      @type.to_schema(buffer)
+    end
+
     def finalize_references(schema)
       return if @finalized
       @finalized = true
       if @type.is_a?(Symbol)
-        @type = schema[@type]
+        @type = Reference.new(@type, schema[@type])
       else
         @type.finalize_references(schema)
       end
@@ -557,6 +612,8 @@ class BareTypes
   end
 
   class ArrayFixedLen < BaseType
+    attr_accessor :type, :size
+
     def ==(otherType)
       return otherType.class == BareTypes::ArrayFixedLen && otherType.type == @type && otherType.size == @size
     end
@@ -575,19 +632,11 @@ class BareTypes
       @type = type
       @size = size
       raise VoidUsedOutsideTaggedSet.new("Void type may not be used as type of fixed length array.") if type.class == BareTypes::Void
-      raise MinimumSizeError.new("FixedLenArray size must be > 0") if size < 1
-    end
-
-    def type
-      @type
-    end
-
-    def size
-      @size
+      raise MinimumSizeError.new("ArrayFixedLen size must be > 0") if size < 1
     end
 
     def encode(arr, buffer)
-      raise SchemaMismatch.new("This FixLenArray is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
+      raise SchemaMismatch.new("This ArrayFixedLen is of length #{@size.to_s} but you passed an array of length #{arr.size}") if arr.size != @size
       arr.each do |item|
         @type.encode(item, buffer)
       end
@@ -601,6 +650,11 @@ class BareTypes
       end
       return array, rest
     end
+
+    def to_schema(buffer)
+      buffer << "[#{@size}]"
+      @type.to_schema(buffer)
+    end
   end
 
   class Enum < BaseType
@@ -612,9 +666,15 @@ class BareTypes
       return true
     end
 
-
-    def finalize_references(schema)
+    def to_schema(buffer)
+      buffer << "{\n"
+      @valToInt.each do |name, repr|
+        buffer << "   #{name} = #{repr}\n"
+      end
+      buffer << "}"
     end
+
+    def finalize_references(schema) end
 
     def intToVal
       @intToVal

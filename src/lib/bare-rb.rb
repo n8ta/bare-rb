@@ -4,10 +4,13 @@ require_relative "lexer"
 require_relative "parser"
 
 class Bare
-  def self.encode(msg, schema, type=nil)
+  def self.encode(msg, schema, type = nil)
     buffer = "".b
     if schema.is_a?(Bare::Schema)
       raise NoTypeProvided("To encode with a schema as opposed to a raw type you must specify which type in the schema you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
+      unless schema.include?(type)
+        raise("#{typ} is not a type found in this schema. Choose from #{schema.types.keys}")
+      end
       schema[type].encode(msg, buffer)
     else
       schema.encode(msg, buffer)
@@ -15,7 +18,7 @@ class Bare
     buffer
   end
 
-  def self.decode(msg, schema, type=nil)
+  def self.decode(msg, schema, type = nil)
     if schema.is_a?(Bare::Schema)
       raise NoTypeProvided("To decode with a schema as opposed to a raw type you must specify which type in the same you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
       value, _ = schema[type].decode(msg)
@@ -38,32 +41,65 @@ class Bare
   end
 
   class Schema
+    attr_accessor :types
+
+    def initialize(types)
+      @types = types.map { |k, v| [k.to_sym, v] }.to_h
+
+      # Resolve deep references in schema
+      # type A u8
+      # type B A
+      # type C B
+      # first  loop would find B and make it a reference to A
+      # second loop would find C and make it a reference to B
+      progress = true
+      remaining = @types.keys.to_a
+      while progress
+        progress = false
+        remaining.each do |key|
+          val = @types[key]
+          if val.is_a?(Symbol) && !@types[val].is_a?(Symbol)
+            @types[key.to_sym] = BareTypes::Reference.new(key, @types[val])
+            progress = true
+          else
+          end
+        end
+      end
+
+      @types.each do |key, val|
+        if val.is_a?(Symbol)
+          raise ReferenceException.new("Your types contain a cycle. Please fix them.")
+        end
+      end
+
+      @types.values.each do |val|
+        val.finalize_references(@types)
+      end
+    end
+
     def ==(otherSchema)
       return false unless otherSchema.is_a?(Bare::Schema)
       @types == otherSchema.types
     end
 
-    def types
-      @types
+    def to_s
+      buffer = ""
+      @types.each do |name, type|
+        if type.is_a?(BareTypes::Enum)
+          buffer << "enum #{name} "
+          type.to_schema(buffer)
+          buffer << "\n"
+        else
+          buffer << "type #{name} "
+          type.to_schema(buffer)
+          buffer << "\n"
+        end
+      end
+      buffer
     end
 
     def [](key)
       return @types[key]
-    end
-
-    def initialize(types)
-      @types = types
-      @types_raw = types # Types but :symbols instead of actual references, useful for serializing back to a schema file
-      @types.keys.each do |key|
-        if @types[key].is_a?(Symbol)
-          @types[key] = BareTypes::Reference(key, @types[@types[key]])
-        else
-          # Users may use symbols to reference not yet defined types
-          # here we recursively call our bare classes to finalize their types
-          # replacing Symbols like :SomeType with a reference to the other type
-          @types[key].finalize_references(@types)
-        end
-      end
     end
   end
 
@@ -165,7 +201,4 @@ class Bare
   def self.Enum(*opts)
     return BareTypes::Enum.new(*opts)
   end
-
-
 end
-
