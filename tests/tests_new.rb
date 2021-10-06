@@ -125,9 +125,9 @@ class TestBare < Minitest::Test
                    [1, "\x01\x00\x00\x00\x00\x00\x00\x00".b, Bare.U64],
                    [3, "\x03\x00\x00\x00\x00\x00\x00\x00".b, Bare.U64],
                    [256 + 3, "\x03\x01\x00\x00\x00\x00\x00\x00".b, Bare.U64],
-                 # removed temporarily due to issues with rutie and full 64 bit nums
-                  [(2 ** 64) - 1, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF".b, Bare.U64],
-                  [(2 ** 64) - 2, "\xFE\xFF\xFF\xFF\xFF\xFF\xFF\xFF".b, Bare.U64],
+                   # removed temporarily due to issues with rutie and full 64 bit nums
+                   [(2 ** 64) - 1, "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF".b, Bare.U64],
+                   [(2 ** 64) - 2, "\xFE\xFF\xFF\xFF\xFF\xFF\xFF\xFF".b, Bare.U64],
 
                  ])
   end
@@ -298,12 +298,12 @@ class TestBare < Minitest::Test
   end
 
   def test_schema
-    testing_hash = {1 => "abc", 5 => :cow, 16382 => 123}
-    test_2_enum = {0 => "ACCOUNTING",
-                   1 => "ADMINISTRATION",
-                   2 => "CUSTOMER_SERVICE",
-                   3 => "DEVELOPMENT",
-                   99 => "JSMITH" }
+    testing_hash = { 1 => "abc", 5 => :cow, 16382 => 123 }
+    test_2_enum = { 0 => "ACCOUNTING",
+                    1 => "ADMINISTRATION",
+                    2 => "CUSTOMER_SERVICE",
+                    3 => "DEVELOPMENT",
+                    99 => "JSMITH" }
     test_3_struct_inner = {
       orderId: Bare.I64,
       quantity: Bare.I32
@@ -314,8 +314,8 @@ class TestBare < Minitest::Test
       orders: Bare.Array(Bare.Struct(test_3_struct_inner)),
       metadata: Bare.Map(Bare.String, Bare.Data)
     }
-    test_7 = {PublicKey: Bare.DataFixedLen(128)}
-    test_7[:Customer] = Bare.Struct({pubKey: :PublicKey})
+    test_7 = { PublicKey: Bare.DataFixedLen(128) }
+    test_7[:Customer] = Bare.Struct({ pubKey: :PublicKey })
     test_8 = {
       PublicKey: Bare.DataFixedLen(128),
       Time: Bare.String,
@@ -340,53 +340,130 @@ class TestBare < Minitest::Test
           metadata: Bare.Map(Bare.String, Bare.Data)
         }
       ),
-      Person: Bare.Union({0 => :Customer, 1 => :Employee}),
-      Address: Bare.Struct({address: Bare.ArrayFixedLen(Bare.String, 4),
-                            city: Bare.String,
-                            state: Bare.String,
-                            country: Bare.String}),
+      Person: Bare.Union({ 0 => :Customer, 1 => :Employee }),
+      Address: Bare.Struct({ address: Bare.ArrayFixedLen(Bare.String, 4),
+                             city: Bare.String,
+                             state: Bare.String,
+                             country: Bare.String }),
     }
 
     lexing_tests = [
-      {file: "./schemas/test0.schema", ast: {Key: Bare.Array(Bare.Uint)}},
-      {file: "./schemas/test1.schema", ast: {Key: Bare.String}},
-      {file: "./schemas/test2.schema", ast: {Department: Bare.Enum(test_2_enum)}},
-      {file: "./schemas/test3.schema", ast: {Customer: Bare.Struct(test_3_struct)}},
-      {file: "./schemas/test4.schema", ast: {Something: Bare.ArrayFixedLen(Bare.String, 5)}},
-      {file: "./schemas/test5.schema", ast: {Age: Bare.Optional(Bare.Int)}},
-      {file: "./schemas/test6.schema", ast: {A_UNION: Bare.Union({0 => Bare.Int, 1 => Bare.Uint, 7 => Bare.Data, 8 => Bare.F32})}},
-      {file: "./schemas/test7.schema", ast: test_7},
-      {file: "./schemas/test8.schema", ast: test_8},
+      { file: "./schemas/test0.schema", ast: { Key: Bare.Array(Bare.Uint) } },
+      { file: "./schemas/test1.schema", ast: { Key: Bare.String } },
+      { file: "./schemas/test2.schema", ast: { Department: Bare.Enum(test_2_enum) } },
+      { file: "./schemas/test3.schema", ast: { Customer: Bare.Struct(test_3_struct) } },
+      { file: "./schemas/test4.schema", ast: { Something: Bare.ArrayFixedLen(Bare.String, 5) } },
+      { file: "./schemas/test5.schema", ast: { Age: Bare.Optional(Bare.Int) } },
+      { file: "./schemas/test6.schema", ast: { A_UNION: Bare.Union({ 0 => Bare.Int, 1 => Bare.Uint, 7 => Bare.Data, 8 => Bare.F32 }) } },
+      { file: "./schemas/test7.schema", ast: test_7 },
+      { file: "./schemas/test8.schema", ast: test_8 },
     ]
-
 
     lexing_tests.each_with_index do |test, i|
       path = rel_path(test[:file])
       schema = Bare.parse_schema(path)
       correct_schema = Bare.Schema(test[:ast])
-      assert_equal schema, correct_schema, "Got #{schema} but expected  #{correct_schema} for lexing test #{i+1}"
+      assert_equal schema, correct_schema, "Got #{schema} but expected  #{correct_schema} for lexing test #{i + 1}"
     end
   end
 
   def test_schema_e2e
     schema = Bare.parse_schema(rel_path('./schemas/test3.schema'))
-    msg = {name: "和製漢字",
-           email: "n8 AYT u.northwestern.edu",
-           orders: [{orderId: 5, quantity: 11},
-                    {orderId: 6, quantity: 2},
-                    {orderId: 123, quantity: -5}],
-           metadata: {"Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b}
+    msg = { name: "和製漢字",
+            email: "n8 AYT u.northwestern.edu",
+            orders: [{ orderId: 5, quantity: 11 },
+                     { orderId: 6, quantity: 2 },
+                     { orderId: 123, quantity: -5 }],
+            metadata: { "Something" => "\xFF\xFF\x00\x01".b, "Else" => "\xFF\xFF\x00\x00\xAB\xCC\xAB".b }
     }
     encoded = Bare.encode(msg, schema[:Customer])
     decoded = Bare.decode(encoded, schema[:Customer])
     assert_equal msg, decoded, "Failed end to end schema encoded/decode test"
   end
 
-  def test_odd_schema
+  def test_data_off_by_one_schema
     schema = Bare.parse_schema(rel_path("./schemas/test9.schema"))
     input = { A: "\x01\x02\x03".b, B: "\x88".b }
     binary = Bare.encode(input, schema[:TYP])
     decoded = Bare.decode(binary, schema[:TYP])
     assert_equal input, decoded
+  end
+
+  def test_circular_schema
+    schema = {
+      :A => Bare.Struct({ afield: :B, afield2: Bare.U8 }),
+      :B => Bare.Struct({ bfield: :A })
+    }
+    assert_raises(CircularSchema) do
+      Bare.Schema(schema)
+    end
+  end
+
+  def test_circular_schema_2
+    schema = {
+      :A => Bare.Struct({ afield: :B, afield2: Bare.U8 }),
+      :B => Bare.Struct({ bfield: :C }),
+      :C => Bare.Struct({ cfield: :A }),
+    }
+    assert_raises(CircularSchema) do
+      Bare.Schema(schema)
+    end
+  end
+
+  def test_circular_schema_nested
+    schema = {
+      :A => Bare.Struct({ afield: Bare.Struct({ a_a_field: :B }) }),
+      :B => Bare.Struct({ bfield: :A }),
+    }
+    assert_raises(CircularSchema) do
+      Bare.Schema(schema)
+    end
+  end
+
+  def test_circular_schema_deeply_nested
+    schema = {
+      :A => Bare.Struct({ afield: Bare.Struct({ a_a_field: Bare.Struct({ a_a_a_field: :B }) }) }),
+      :B => Bare.Struct({ bfield: :A }),
+    }
+    assert_raises(CircularSchema) do
+      Bare.Schema(schema)
+    end
+  end
+
+  def test_circular_schema_deeply_nested_2
+    schema = {
+      :A => Bare.Struct({ a_field: Bare.Struct({ a_a_field: Bare.Struct({ a_a_a_field: :B }) }) }),
+      :B => Bare.Struct({ b_field: :C }),
+      :C => Bare.Struct({ c_field: :A }),
+    }
+    assert_raises(CircularSchema) do
+      Bare.Schema(schema)
+    end
+  end
+
+  def test_circular_union
+    scehma = {
+      :A => Bare.Union({ a: :A })
+    }
+    assert_raises(CircularSchema) do
+      Bare.Schema(schema)
+    end
+  end
+
+  def test_circular_union
+    schema = {
+      :A => Bare.Struct({ a: :B }),
+      :B => Bare.Union({ 0 => :A })
+    }
+    assert_raises(CircularSchema) do
+      Bare.Schema(schema)
+    end
+  end
+
+  def test_noncircular_union
+    schema = {
+      :A => Bare.Struct({ a: :B }),
+      :B => Bare.Union({ 1 => :A, 2 => Bare.U8 })
+    }
   end
 end

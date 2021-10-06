@@ -17,7 +17,6 @@ class BareTypes::Reference
   def self.make(depth, names)
     self.ref.make(depth, names)
   end
-
 end
 
 # region Integers
@@ -113,7 +112,7 @@ class BareTypes::F32
     loop do
       input = [rand(266), rand(266), rand(266), rand(266)]
       float = input.pack("cccc").unpack('e')
-      if float == float
+      if float[0] == float[0] && !float[0].nan?
         break
       end
     end
@@ -131,7 +130,7 @@ class BareTypes::F64
     loop do
       input = [rand(266), rand(266), rand(266), rand(266), rand(266), rand(266), rand(266), rand(266)]
       float = input.pack("cccccccc").unpack('E')
-      if float == float
+      if float[0] == float[0] && !float[0].nan?
         break
       end
     end

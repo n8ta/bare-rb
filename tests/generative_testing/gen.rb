@@ -16,15 +16,13 @@ def get_type(depth, names = [], can_be_symbol = true)
   all = terminators + aggregates
 
   # 1/5 changes of a reference
-  x = if rand(5) == 0 && names.size != 1
-        names[rand(names.size)]
-      elsif depth >= 10 # if depth >= 10 only use terminating types
-        all[rand(terminators.size)].make(depth+1, names)
-      else
-        # otherwise random type
-        all[rand(all.size)].make(depth+1, names)
-      end
-  x
+  if rand(5) == 0 && names.size != 1 && can_be_symbol
+    names[rand(names.size)]
+  elsif depth >= 10 # if depth >= 10 only use terminating types
+    all[rand(terminators.size)].make(depth + 1, names)
+  else
+    all[rand(all.size)].make(depth + 1, names)
+  end
 end
 
 def create_schema
@@ -34,7 +32,7 @@ def create_schema
     names << create_user_type_name.to_sym
   end
   names.each do |name|
-    without_this_name = names.select {|n| n != name}
+    without_this_name = names.select { |n| n != name }
     schema[name] = get_type(0, without_this_name, false)
   end
   Bare.Schema(schema)

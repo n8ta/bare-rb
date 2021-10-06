@@ -5,11 +5,11 @@ require 'minitest/autorun'
 class TestGen < Minitest::Test
   def test_gen
 
-    0.upto(10) do
+    0.upto(1000) do
       file = Tempfile.new('schema.bare')
       file.open
 
-      # begin
+      begin
         schema = create_schema
         file.truncate(0)
         file.write(schema.to_s)
@@ -25,14 +25,14 @@ class TestGen < Minitest::Test
           end
           assert_equal input, output, "Something went wrong.. input != output for #{schema_entry}"
         end
-
-      # rescue Exception => e
-      #   puts "Schema:"
-      #   puts schema.to_s
-      #   puts e.inspect
-      #   file.close
-      # ensure
-      # end
+        #
+      rescue Exception => e
+        puts "Schema:"
+        puts schema.to_s
+        puts e.inspect
+        file.close
+      ensure
+      end
     end
   end
 end

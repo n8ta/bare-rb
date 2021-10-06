@@ -7,6 +7,8 @@ class BareTypes
       @finalized = false
       super
     end
+    def cycle_search(seen)
+    end
   end
 
   # Used to represent a Type reference in a schema.
@@ -15,6 +17,12 @@ class BareTypes
   class Reference < BaseType
     attr_accessor :name
     attr_accessor :ref
+
+    def cycle_search(seen)
+      seen.add(self)
+      @ref.cycle_search(seen)
+      seen.pop
+    end
 
     def ==(other)
       other.is_a?(Reference) && @name == other.name && @ref == other.ref
@@ -44,9 +52,8 @@ class BareTypes
     end
 
     def to_schema(buffer)
-      @ref.to_schema(buffer)
+      buffer << @name.to_s
     end
-
   end
 
   class BarePrimitive < BaseType
@@ -68,6 +75,7 @@ class BareTypes
 
   end
 
+  #region Primitives
   class Int < BarePrimitive
     # https://developers.google.com/protocol-buffers/docs/encoding
     # Easy to just convert to signed and re-use uint code
@@ -128,183 +136,6 @@ class BareTypes
       strLen, rest = Uint.new.decode(msg)
       string = rest[0..strLen - 1]
       return string.force_encoding("utf-8"), rest[strLen..rest.size]
-    end
-  end
-
-  class Optional < BaseType
-    def ==(otherType)
-      return otherType.class == BareTypes::Optional && otherType.optionalType == @optionalType
-    end
-
-    def to_schema(buffer)
-      buffer << "optional<"
-      @optionalType.to_schema(buffer)
-      buffer << ">"
-    end
-
-    def finalize_references(schema)
-      return if @finalized
-      @finalized = true
-      if @optionalType.is_a?(Symbol)
-        @optionalType = Reference.new(@optionalType, schema[@optionalType])
-      else
-        @optionalType.finalize_references(schema)
-      end
-    end
-
-    def optionalType
-      @optionalType
-    end
-
-    def initialize(optionalType)
-      raise VoidUsedOutsideTaggedSet() if optionalType.class == BareTypes::Void
-      @optionalType = optionalType
-    end
-
-    def encode(msg, buffer)
-      if msg.nil?
-        buffer << "\x00".b
-      else
-        buffer << "\x01".b
-        @optionalType.encode(msg, buffer)
-      end
-    end
-
-    def decode(msg)
-      if msg.unpack("C")[0] == 0
-        return nil, msg[1..msg.size]
-      else
-        return @optionalType.decode(msg[1..msg.size])
-      end
-    end
-  end
-
-  class Map < BaseType
-    def ==(otherType)
-      return otherType.class == BareTypes::Map && otherType.from == @from && otherType.to == @to
-    end
-
-    def to_schema(buffer)
-      buffer << "map["
-      @from.to_schema(buffer)
-      buffer << "]"
-      @to.to_schema(buffer)
-    end
-
-    def finalize_references(schema)
-      return if @finalized
-      @finalized = true
-      if @from.is_a?(Symbol)
-        @to = Reference.new(@from, schema[@to])
-      else
-        @to.finalize_references(schema)
-      end
-    end
-
-    def initialize(fromType, toType)
-      raise VoidUsedOutsideTaggedSet if fromType.class == BareTypes::Void or toType.class == BareTypes::Void
-      if !fromType.class.ancestors.include?(BarePrimitive) ||
-        fromType.is_a?(BareTypes::Data) ||
-        fromType.is_a?(BareTypes::DataFixedLen)
-        raise MapKeyError("Map keys must use a primitive type which is not data or data<length>.")
-      end
-      @from = fromType
-      @to = toType
-    end
-
-    def from
-      @from
-    end
-
-    def to
-      @to
-    end
-
-    def encode(msg, buffer)
-      Uint.new.encode(msg.size, buffer)
-      msg.each do |from, to|
-        @from.encode(from, buffer)
-        @to.encode(to, buffer)
-      end
-    end
-
-    def decode(msg)
-      hash = Hash.new
-      mapSize, rest = Uint.new.decode(msg)
-      # (0..mapSize).each do
-      (mapSize - 1).to_i.downto(0) do
-        key, rest = @from.decode(rest)
-        value, rest = @to.decode(rest)
-        hash[key] = value
-      end
-      return hash, rest
-    end
-  end
-
-  class Union < BaseType
-    attr_accessor :intToType
-
-    def finalize_references(schema)
-      return if @finalized
-      @finalized = true
-      @intToType.keys.each do |key|
-        if @intToType[key].is_a?(Symbol)
-          @intToType[key] = Reference.new(@intToType[key], schema[@intToType[key]])
-        else
-          @intToType[key].finalize_references(schema)
-        end
-      end
-    end
-
-    def ==(otherType)
-      return false unless otherType.is_a?(BareTypes::Union)
-      @intToType.each do |int, type|
-        return false unless type == otherType.intToType[int]
-      end
-      true
-    end
-
-    def initialize(intToType)
-      intToType.keys.each do |i|
-        raise MinimumSizeError("Union's integer representations must be > 0, instead got: #{i}") if i < 0 or !i.is_a?(Integer)
-      end
-      raise MinimumSizeError("Union must have at least one type") if intToType.keys.size < 1
-      @intToType = intToType
-    end
-
-    def to_schema(buffer)
-      buffer << "("
-      strs = []
-      @intToType.size.times do
-        strs << ""
-      end
-      @intToType.values.each_with_index.map { |type, i| type.to_schema(strs[i]) }
-      buffer << strs.join(" | ")
-      buffer << ")"
-    end
-
-    def encode(msg, buffer)
-      type = msg[:type]
-      value = msg[:value]
-      unionTypeInt = nil
-      unionType = nil
-      @intToType.each do |int, typ|
-        if type.class == typ.class
-          unionTypeInt = int
-          unionType = typ
-          break
-        end
-      end
-      raise SchemaMismatch("Unable to find given type in union: #{@intToType.inspect}, type: #{type}") if unionType.nil? || unionTypeInt.nil?
-      Uint.new.encode(unionTypeInt, buffer)
-      unionType.encode(value, buffer)
-    end
-
-    def decode(msg)
-      int, rest = Uint.new.decode(msg)
-      type = @intToType[int]
-      value, rest = type.decode(rest)
-      return { value: value, type: type }, rest
     end
   end
 
@@ -485,9 +316,205 @@ class BareTypes
       return (msg == "\x00" ? true : false), msg[1..msg.size]
     end
   end
+  #endregion
+
+  class Optional < BaseType
+    def ==(otherType)
+      return otherType.class == BareTypes::Optional && otherType.optionalType == @optionalType
+    end
+
+    def to_schema(buffer)
+      buffer << "optional<"
+      @optionalType.to_schema(buffer)
+      buffer << ">"
+    end
+
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      if @optionalType.is_a?(Symbol)
+        @optionalType = Reference.new(@optionalType, schema[@optionalType])
+      else
+        @optionalType.finalize_references(schema)
+      end
+    end
+
+    def optionalType
+      @optionalType
+    end
+
+    def initialize(optionalType)
+      raise VoidUsedOutsideTaggedSet() if optionalType.class == BareTypes::Void
+      @optionalType = optionalType
+    end
+
+    def encode(msg, buffer)
+      if msg.nil?
+        buffer << "\x00".b
+      else
+        buffer << "\x01".b
+        @optionalType.encode(msg, buffer)
+      end
+    end
+
+    def decode(msg)
+      if msg.unpack("C")[0] == 0
+        return nil, msg[1..msg.size]
+      else
+        return @optionalType.decode(msg[1..msg.size])
+      end
+    end
+  end
+
+  class Map < BaseType
+    def ==(otherType)
+      return otherType.class == BareTypes::Map && otherType.from == @from && otherType.to == @to
+    end
+
+    def to_schema(buffer)
+      buffer << "map["
+      @from.to_schema(buffer)
+      buffer << "]"
+      @to.to_schema(buffer)
+    end
+
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      if @from.is_a?(Symbol)
+        @to = Reference.new(@from, schema[@to])
+      else
+        @to.finalize_references(schema)
+      end
+    end
+
+    def initialize(fromType, toType)
+      raise VoidUsedOutsideTaggedSet if fromType.class == BareTypes::Void or toType.class == BareTypes::Void
+      if !fromType.class.ancestors.include?(BarePrimitive) ||
+        fromType.is_a?(BareTypes::Data) ||
+        fromType.is_a?(BareTypes::DataFixedLen)
+        raise MapKeyError("Map keys must use a primitive type which is not data or data<length>.")
+      end
+      @from = fromType
+      @to = toType
+    end
+
+    def from
+      @from
+    end
+
+    def to
+      @to
+    end
+
+    def encode(msg, buffer)
+      Uint.new.encode(msg.size, buffer)
+      msg.each do |from, to|
+        @from.encode(from, buffer)
+        @to.encode(to, buffer)
+      end
+    end
+
+    def decode(msg)
+      hash = Hash.new
+      mapSize, rest = Uint.new.decode(msg)
+      # (0..mapSize).each do
+      (mapSize - 1).to_i.downto(0) do
+        key, rest = @from.decode(rest)
+        value, rest = @to.decode(rest)
+        hash[key] = value
+      end
+      return hash, rest
+    end
+  end
+
+  class Union < BaseType
+    attr_accessor :intToType
+
+    def cycle_search(seen)
+      if @intToType.size == 1
+        seen.add(self)
+        @intToType.values.each do |type|
+          type.cycle_search(seen)
+        end
+        seen.pop
+      end
+    end
+
+    def finalize_references(schema)
+      return if @finalized
+      @finalized = true
+      @intToType.keys.each do |key|
+        if @intToType[key].is_a?(Symbol)
+          @intToType[key] = Reference.new(@intToType[key], schema[@intToType[key]])
+        else
+          @intToType[key].finalize_references(schema)
+        end
+      end
+    end
+
+    def ==(otherType)
+      return false unless otherType.is_a?(BareTypes::Union)
+      @intToType.each do |int, type|
+        return false unless type == otherType.intToType[int]
+      end
+      true
+    end
+
+    def initialize(intToType)
+      intToType.keys.each do |i|
+        raise MinimumSizeError("Union's integer representations must be > 0, instead got: #{i}") if i < 0 or !i.is_a?(Integer)
+      end
+      raise MinimumSizeError("Union must have at least one type") if intToType.keys.size < 1
+      @intToType = intToType
+    end
+
+    def to_schema(buffer)
+      buffer << "("
+      strs = []
+      @intToType.size.times do
+        strs << ""
+      end
+      @intToType.values.each_with_index.map { |type, i| type.to_schema(strs[i]) }
+      buffer << strs.join(" | ")
+      buffer << ")"
+    end
+
+    def encode(msg, buffer)
+      type = msg[:type]
+      value = msg[:value]
+      unionTypeInt = nil
+      unionType = nil
+      @intToType.each do |int, typ|
+        if type.class == typ.class
+          unionTypeInt = int
+          unionType = typ
+          break
+        end
+      end
+      raise SchemaMismatch("Unable to find given type in union: #{@intToType.inspect}, type: #{type}") if unionType.nil? || unionTypeInt.nil?
+      Uint.new.encode(unionTypeInt, buffer)
+      unionType.encode(value, buffer)
+    end
+
+    def decode(msg)
+      int, rest = Uint.new.decode(msg)
+      type = @intToType[int]
+      value, rest = type.decode(rest)
+      return { value: value, type: type }, rest
+    end
+  end
 
   class Struct < BaseType
     attr_accessor :mapping
+
+    def cycle_search(seen)
+      seen.add(self)
+      @mapping.values.each do |val|
+        val.cycle_search(seen)
+      end
+      seen.pop
+    end
 
     def [](key)
       @mapping[key]
@@ -558,12 +585,17 @@ class BareTypes
       end
       buffer << "}"
     end
-
   end
 
   class Array < BaseType
     def ==(otherType)
       otherType.class == BareTypes::Array && otherType.type == self.type
+    end
+
+    def cycle_search(seen)
+      seen.add(self)
+      @type.cycle_search(seen)
+      seen.pop
     end
 
     def type
@@ -613,6 +645,12 @@ class BareTypes
 
   class ArrayFixedLen < BaseType
     attr_accessor :type, :size
+
+    def cycle_search(seen)
+      seen.add(self)
+      @type.cycle_search(seen)
+      seen.pop
+    end
 
     def ==(otherType)
       return otherType.class == BareTypes::ArrayFixedLen && otherType.type == @type && otherType.size == @size
@@ -704,7 +742,6 @@ class BareTypes
       return @intToVal[value], rest
     end
   end
-
 end
 
 def _get_next_7_bits_as_byte(integer, base = 128)

@@ -2,6 +2,7 @@ require 'set'
 require_relative "types"
 require_relative "lexer"
 require_relative "parser"
+require_relative 'dfs'
 
 class Bare
   def self.encode(msg, schema, type = nil)
@@ -45,8 +46,16 @@ class Bare
 
     def initialize(types)
       @types = types.map { |k, v| [k.to_sym, v] }.to_h
+      @types.each do |k, v|
+        unless k.is_a?(Symbol)
+          raise("Keys to a schema must be symbols")
+        end
+        if v.nil?
+          raise("Schema values cannot be nil")
+        end
+      end
 
-      # Resolve deep references in schema
+      # Resolve references in schema
       # type A u8
       # type B A
       # type C B
@@ -68,12 +77,16 @@ class Bare
 
       @types.each do |key, val|
         if val.is_a?(Symbol)
-          raise ReferenceException.new("Your types contain a cycle. Please fix them.")
+          raise ReferenceException.new("Your types contain an unresolved reference '#{val}'.")
         end
       end
 
       @types.values.each do |val|
         val.finalize_references(@types)
+      end
+
+      @types.each do |key, val|
+        val.cycle_search(SeenList.new)
       end
     end
 

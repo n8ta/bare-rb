@@ -1,0 +1,4 @@
+type A [][2]{
+    BBB: u8
+    CCC: f64
+}

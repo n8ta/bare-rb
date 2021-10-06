@@ -5,13 +5,13 @@
 ![Ruby 2.5](https://img.shields.io/badge/Ruby-2.5-brightgreen)
 ![Ruby 2.6](https://img.shields.io/badge/Ruby-2.6-brightgreen)
 ![Ruby 2.7](https://img.shields.io/badge/Ruby-2.7-brightgreen)
-![Ruby 2.7](https://img.shields.io/badge/Ruby-3.0.2-brightgreen)
+![Ruby 3.0.2](https://img.shields.io/badge/Ruby-3.0.2-brightgreen)
 
-Implementation of the [Bare message protocol](https://baremessages.org/) in Ruby
+Implementation of the [BARE message protocol](https://baremessages.org/) in Ruby
 
-BARE is a simple efficient binary encoding. It's primary advantage over json
- is it's structured nature and smaller messages sizes. Messages are smaller because they do not describe themselves (no key names). 
- This means the same message schema must be present on the sender and receiver.  
+BARE is a simple efficient binary encoding. Its primary advantage over json
+ is its structured nature and smaller messages sizes. Messages are smaller because they do not describe themselves (no key names). 
+ This means the same message schema MUST be present on the sender and receiver.  
 
 This implementation is complete but hasn't be rigorously tested for compatibility with another implementation. Please file an issue here on github if you find a bug.
 Feel free to submit a PR with your own fixes or improvements, just be sure to run the tests.
@@ -95,25 +95,17 @@ msg == decoded
 # True
 ```
 
-# Compatiblity
-- Ruby 2.7
-- Ruby 2.6
-- Ruby 2.5
-
 # semver 
 All public interfaces are semantically versioned. The major version number will be bumped if I change them.
 
 The public interfaces are 
-1. Bare.encode
+[1. Bare.encode
 2. Bare.decode
 3. Bare.parse_schema
-4. BareException (base exception class)
-5. Bare.Int, Bare.Struct etc...
+4. BareException (base exception class ONLY)
+5. Bare.Schema Bare.Int, Bare.Struct etc...
 
 There are internal encode/decodes one each class like int and struct. They could change without notice. Use Bare.encode/decode.
-
-The 1.0 release is not to signal completeness (though it's fairly complete) but to introduce 
-semver and make the project's interface clear. 
 
 # Type Examples & Documentation
 1. [uint](#uint)

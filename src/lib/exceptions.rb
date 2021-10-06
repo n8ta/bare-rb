@@ -11,6 +11,12 @@ class InvalidBool < BareException
   end
 end
 
+class CircularSchema < BareException
+  def initialize(msg = nil)
+    super
+  end
+end
+
 class ReferenceException < BareException
   def initialize(msg=nil)
     super
