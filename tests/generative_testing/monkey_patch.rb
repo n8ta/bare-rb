@@ -2,9 +2,9 @@ require_relative '../../src/lib/bare-rb'
 require_relative './grammar_util'
 
 # 10MB max data size
-DATA_MAX_SIZE = 5
-ARRAY_MAX_SIZE = 3
-STRUCT_FIELDS_MAX = 1
+DATA_MAX_SIZE = 30000
+ARRAY_MAX_SIZE = 40
+STRUCT_FIELDS_MAX = 5
 
 # Monkey patch every bare class to include make and create_input
 # make - a factory to create a random variant of the bare class
