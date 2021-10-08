@@ -1,5 +1,5 @@
 #!/bin/sh
 gem build bare-rb.gemspec
-gem install bare-rb-0.1.5
+gem install bare-rb-0.2.0
 cd ../tests
 ruby ./tests.rb
