@@ -1,5 +1,4 @@
-require_relative './gen'
-require 'tempfile'
+require_relative '../src/lib/bare-rb'
 require 'minitest/autorun'
 
 class TestGen < Minitest::Test
@@ -13,7 +12,7 @@ class TestGen < Minitest::Test
       puts "Done with #{tests}"
 
       begin
-        schema = create_schema
+        schema, _binary = Bare.generative_test
         file.truncate(0)
         file.write(schema.to_s)
         file.close
@@ -32,7 +31,9 @@ class TestGen < Minitest::Test
       rescue CircularSchema => e
         puts "Generator generated a circular schema..."
       rescue Exception => e
+        puts "Something unexpected went wrong. This is a bug."
         puts schema.to_s
+        raise e
         break
       end
     end

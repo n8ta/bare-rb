@@ -1,4 +1,4 @@
-require_relative '../../src/lib/bare-rb'
+require_relative '../bare-rb'
 require_relative './grammar_util'
 
 # 10MB max data size
@@ -14,6 +14,7 @@ class BareTypes::Reference
   def create_input
     self.ref.create_input
   end
+
   def self.make(depth, names)
     self.ref.make(depth, names)
   end
@@ -36,7 +37,7 @@ class BareTypes::U16
   end
 
   def create_input
-    rand(2**16)
+    rand(2 ** 16)
   end
 end
 
@@ -46,7 +47,7 @@ class BareTypes::U32
   end
 
   def create_input
-    rand(2**32)
+    rand(2 ** 32)
   end
 end
 
@@ -56,7 +57,7 @@ class BareTypes::U64
   end
 
   def create_input
-    rand(2**64)
+    rand(2 ** 64)
   end
 end
 
@@ -99,6 +100,7 @@ class BareTypes::I64
     rand(2 ** 64) - (2 ** 63)
   end
 end
+
 # endregion
 
 #region Floats
@@ -137,19 +139,20 @@ class BareTypes::F64
     float[0]
   end
 end
+
 #endregion
 
 #region Data
 class BareTypes::DataFixedLen
   def self.make(depth, names)
-    length = rand(max=DATA_MAX_SIZE) + 1
+    length = rand(max = DATA_MAX_SIZE) + 1
     self.new(length)
   end
 
   def create_input
     # 100 random bytes
     arr = []
-    0.upto(length-1).each do |i|
+    0.upto(length - 1).each do |i|
       arr << i % 256
     end
     arr.pack('c*')
@@ -169,12 +172,13 @@ class BareTypes::Data
     arr.pack('c*')
   end
 end
+
 #endregion
 
 #region Array
 class BareTypes::Array
   def self.make(depth, names)
-    BareTypes::Array.new(get_type(depth+1, names))
+    BareTypes::Array.new(get_type(depth + 1, names))
   end
 
   def create_input
@@ -189,17 +193,18 @@ end
 
 class BareTypes::ArrayFixedLen
   def self.make(depth, names)
-    self.new(get_type(depth+1, names,), rand(ARRAY_MAX_SIZE) + 1)
+    self.new(get_type(depth + 1, names,), rand(ARRAY_MAX_SIZE) + 1)
   end
 
   def create_input
     arr = []
-    0.upto(@size-1) do
+    0.upto(@size - 1) do
       arr << @type.create_input
     end
     arr
   end
 end
+
 #endregion
 
 #region Agg Types
@@ -208,10 +213,11 @@ class BareTypes::Struct
   def self.make(depth, names)
     hash = {}
     0.upto(rand(STRUCT_FIELDS_MAX) + 1) do
-      hash[create_user_type_name.to_sym] = get_type(depth+1, names)
+      hash[create_user_type_name.to_sym] = get_type(depth + 1, names)
     end
     self.new(hash)
   end
+
   def create_input
     input = {}
     @mapping.keys.each do |name|
@@ -222,3 +228,35 @@ class BareTypes::Struct
 end
 
 # endregion
+
+class BareTypes::Schema
+  def create_input
+    input = {}
+    @types.each do |key, type|
+      input[key] = type.create_input
+    end
+    input
+  end
+
+  def self.make
+    schema = nil
+    loop do
+      names = []
+      schema = {}
+      0.upto(rand(10)+1) do
+        names << create_user_type_name.to_sym
+      end
+      names.each do |name|
+        without_this_name = names.select { |n| n != name }
+        schema[name] = get_type(0, without_this_name, false)
+      end
+      begin
+        schema = Bare.Schema(schema)
+      rescue CircularSchema
+        next
+      end
+      break
+    end
+    schema
+  end
+end

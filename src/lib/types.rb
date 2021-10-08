@@ -11,6 +11,81 @@ class BareTypes
     end
   end
 
+  class Schema
+    attr_accessor :types
+
+    def initialize(types)
+      @types = types.map { |k, v| [k.to_sym, v] }.to_h
+      @types.each do |k, v|
+        unless k.is_a?(Symbol)
+          raise("Keys to a schema must be symbols")
+        end
+        if v.nil?
+          raise("Schema values cannot be nil")
+        end
+      end
+
+      # Resolve references in schema
+      # type A u8
+      # type B A
+      # type C B
+      # first  loop would find B and make it a reference to A
+      # second loop would find C and make it a reference to B
+      progress = true
+      remaining = @types.keys.to_a
+      while progress
+        progress = false
+        remaining.each do |key|
+          val = @types[key]
+          if val.is_a?(Symbol) && !@types[val].is_a?(Symbol)
+            @types[key.to_sym] = BareTypes::Reference.new(key, @types[val])
+            progress = true
+          else
+          end
+        end
+      end
+
+      @types.each do |key, val|
+        if val.is_a?(Symbol)
+          raise ReferenceException.new("Your types contain an unresolved reference '#{val}'.")
+        end
+      end
+
+      @types.values.each do |val|
+        val.finalize_references(@types)
+      end
+
+      @types.each do |key, val|
+        val.cycle_search(SeenList.new)
+      end
+    end
+
+    def ==(otherSchema)
+      return false unless otherSchema.is_a?(BareTypes::Schema)
+      @types == otherSchema.types
+    end
+
+    def to_s
+      buffer = ""
+      @types.each do |name, type|
+        if type.is_a?(BareTypes::Enum)
+          buffer << "enum #{name} "
+          type.to_schema(buffer)
+          buffer << "\n"
+        else
+          buffer << "type #{name} "
+          type.to_schema(buffer)
+          buffer << "\n"
+        end
+      end
+      buffer
+    end
+
+    def [](key)
+      return @types[key]
+    end
+  end
+
   # Used to represent a Type reference in a schema.
   # eg. test8.schema's  address field on Customer contains 'Address'
   # a reference to the Address type defined earlier.

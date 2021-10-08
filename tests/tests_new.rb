@@ -442,7 +442,7 @@ class TestBare < Minitest::Test
   end
 
   def test_circular_union
-    scehma = {
+    schema = {
       :A => Bare.Union({ a: :A })
     }
     assert_raises(CircularSchema) do
@@ -465,5 +465,29 @@ class TestBare < Minitest::Test
       :A => Bare.Struct({ a: :B }),
       :B => Bare.Union({ 1 => :A, 2 => Bare.U8 })
     }
+  end
+  def test_generative_test_func
+    schema, binary, schema_type = Bare.generative_test
+    msg = Bare.decode(binary, schema, schema_type)
+    bin2 = Bare.encode(msg, schema, schema_type)
+    assert_equal(binary, bin2)
+  end
+  def test_generative_test_func_file_opt
+    schema_path = rel_path("schema.bare")
+    bin_path = rel_path("input.bin")
+    schema, binary, schema_type = Bare.generative_test(schema_path, bin_path)
+    parsed_schema = Bare.parse_schema(schema_path)
+    assert_equal(schema, parsed_schema)
+
+    schema_file = File.open(schema_path, 'r')
+    schema_contents = schema_file.read
+    assert_equal(schema_contents, schema.to_s)
+    schema_file.close
+
+    bin_file = File.open(bin_path, 'rb')
+    bin_contents = bin_file.read
+    assert_equal(bin_contents, binary)
+    bin_file.close
+
   end
 end

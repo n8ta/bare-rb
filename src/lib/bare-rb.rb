@@ -3,14 +3,16 @@ require_relative "types"
 require_relative "lexer"
 require_relative "parser"
 require_relative 'dfs'
+require_relative 'generative_testing/gen'
+require_relative 'generative_testing/monkey_patch'
 
 class Bare
   def self.encode(msg, schema, type = nil)
     buffer = "".b
-    if schema.is_a?(Bare::Schema)
-      raise NoTypeProvided("To encode with a schema as opposed to a raw type you must specify which type in the schema you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
-      unless schema.include?(type)
-        raise("#{typ} is not a type found in this schema. Choose from #{schema.types.keys}")
+    if schema.is_a?(BareTypes::Schema)
+      raise NoTypeProvided.new("To encode with a schema as opposed to a raw type you must specify which type in the schema you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
+      unless schema.types.include?(type)
+        raise("#{type} is not a type found in this schema. Choose from #{schema.types.keys}")
       end
       schema[type].encode(msg, buffer)
     else
@@ -20,14 +22,34 @@ class Bare
   end
 
   def self.decode(msg, schema, type = nil)
-    if schema.is_a?(Bare::Schema)
-      raise NoTypeProvided("To decode with a schema as opposed to a raw type you must specify which type in the same you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
+    if schema.is_a?(BareTypes::Schema)
+      raise NoTypeProvided.new("To decode with a schema as opposed to a raw type you must specify which type in the same you want to encode as a symbol.\nBare.encode(msg, schema, :Type)") if type.nil?
       value, _ = schema[type].decode(msg)
       value
     else
       value, _ = schema.decode(msg)
       value
     end
+  end
+
+  # Returns a schema and a binary input
+  # optionally write these to files
+  def self.generative_test(schema_path=nil, binary_path=nil)
+    schema = BareTypes::Schema.make
+    input = schema.create_input
+    key = schema.types.keys[0]
+    binary = Bare.encode(input[key], schema, key)
+    unless binary_path.nil?
+      file = File.open(binary_path, 'wb+')
+      file.write(binary)
+      file.close
+    end
+    unless schema_path.nil?
+      file = File.open(schema_path, 'w+')
+      file.write(schema.to_s)
+      file.close
+    end
+    return schema, binary, key
   end
 
   def self.parse_schema(path)
@@ -38,82 +60,7 @@ class Bare
   end
 
   def self.Schema(hash)
-    Bare::Schema.new(hash)
-  end
-
-  class Schema
-    attr_accessor :types
-
-    def initialize(types)
-      @types = types.map { |k, v| [k.to_sym, v] }.to_h
-      @types.each do |k, v|
-        unless k.is_a?(Symbol)
-          raise("Keys to a schema must be symbols")
-        end
-        if v.nil?
-          raise("Schema values cannot be nil")
-        end
-      end
-
-      # Resolve references in schema
-      # type A u8
-      # type B A
-      # type C B
-      # first  loop would find B and make it a reference to A
-      # second loop would find C and make it a reference to B
-      progress = true
-      remaining = @types.keys.to_a
-      while progress
-        progress = false
-        remaining.each do |key|
-          val = @types[key]
-          if val.is_a?(Symbol) && !@types[val].is_a?(Symbol)
-            @types[key.to_sym] = BareTypes::Reference.new(key, @types[val])
-            progress = true
-          else
-          end
-        end
-      end
-
-      @types.each do |key, val|
-        if val.is_a?(Symbol)
-          raise ReferenceException.new("Your types contain an unresolved reference '#{val}'.")
-        end
-      end
-
-      @types.values.each do |val|
-        val.finalize_references(@types)
-      end
-
-      @types.each do |key, val|
-        val.cycle_search(SeenList.new)
-      end
-    end
-
-    def ==(otherSchema)
-      return false unless otherSchema.is_a?(Bare::Schema)
-      @types == otherSchema.types
-    end
-
-    def to_s
-      buffer = ""
-      @types.each do |name, type|
-        if type.is_a?(BareTypes::Enum)
-          buffer << "enum #{name} "
-          type.to_schema(buffer)
-          buffer << "\n"
-        else
-          buffer << "type #{name} "
-          type.to_schema(buffer)
-          buffer << "\n"
-        end
-      end
-      buffer
-    end
-
-    def [](key)
-      return @types[key]
-    end
+    BareTypes::Schema.new(hash)
   end
 
   # These classes are wrapped in methods for ergonomics.

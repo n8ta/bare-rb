@@ -1,4 +1,4 @@
-require_relative '../../src/lib/bare-rb'
+require_relative '../bare-rb'
 require_relative './monkey_patch'
 require_relative './grammar_util'
 
@@ -23,17 +23,4 @@ def get_type(depth, names = [], can_be_symbol = true)
   else
     all[rand(all.size)].make(depth + 1, names)
   end
-end
-
-def create_schema
-  names = []
-  schema = {}
-  0.upto(rand(5)) do
-    names << create_user_type_name.to_sym
-  end
-  names.each do |name|
-    without_this_name = names.select { |n| n != name }
-    schema[name] = get_type(0, without_this_name, false)
-  end
-  Bare.Schema(schema)
 end

@@ -58,6 +58,9 @@ schema = Bare.Schema({
 
 # Notice below we specify schema[:Type2] as it now ambiguous to just supply schema
 output = Bare.encode({t1: 5, name: "Some Name"}, schema[:Type2])
+
+puts schema.to_s
+=> "type Type2 {    t1: Type1\n    name: string\n}\ntype Type1 int\n"
 ```
 
 ## Example With Schema File
@@ -94,16 +97,43 @@ decoded = Bare.decode(encoded, schema[:Customer])
 msg == decoded
 # True
 ```
+# Generative Testing
+This package can generate random bare schema + inputs to go with them.
+You can use this to test your own non-ruby bare package. 
+Eg.
+```ruby
+require 'bare-rb'
+schema, bin, type_in_schema = Bare.generative_test("./schema.bare", "./input.bin")
+puts type_in_schema
+==> :someTypeInSchema
+```
+Schema.bare and input.bin will be written to the file system.
+Then you can write a test in your native language
+
+```python3
+with open("./input.bin", 'rb') as bin:
+   with open("./schema.bare", 'rb') as schema:
+      schema_text = schema.read()
+      binary = bin.read()
+      encoded_decoded_binary = Bare.encode(Bare.decode(binary, schema, :someTypeInSchema), :someTypeInSchema))
+      assert encoded_decoded_binary = binary
+ 
+```
+
+
 
 # semver 
 All public interfaces are semantically versioned. The major version number will be bumped if I change them.
 
 The public interfaces are 
-[1. Bare.encode
+1. Bare.encode
 2. Bare.decode
 3. Bare.parse_schema
-4. BareException (base exception class ONLY)
-5. Bare.Schema Bare.Int, Bare.Struct etc...
+4. Bare.generative_test (returns a random schema + binary suitable for it + which type in schema the binary is for)
+5. BareException (base exception class ONLY)
+6. Bare.Schema Bare.Int, Bare.Struct etc...
+7. The to_s method on schemas. Converts schema back into text format.
+   The exact text output for a given schema may without a major or minor version bump BUT the schemas will be equivalent.
 
 There are internal encode/decodes one each class like int and struct. They could change without notice. Use Bare.encode/decode.
 
@@ -125,6 +155,7 @@ There are internal encode/decodes one each class like int and struct. They could
 15. [map type -> type](#map)
 16. [union (type1 | type2 | type3)](#union)
 17. [struct](#struct)
+18. [schema](#schema)
 
 ### uint
 Variable length unsigned integer
@@ -337,6 +368,60 @@ puts output.bytes.inspect
 Bare.decode(output, schema)
 => {:int=>-5, :uint=>8}
 ```
+
+### schema
+A schema is a hash of symbols to bare types.
+
+```ruby
+schema = Bare.Schema({
+Type2: Bare.Struct({
+    t1: :Type1,
+    name: Bare.String
+    }),
+Type1: Bare.Int
+})
+```
+Schemas can contain references to one key within another key (See `:Type1` above).
+
+#### schema.to_s
+```ruby
+schema = Bare.Schema({ Type2: Bare.Struct({ t1: :Type1, name: Bare.String }), Type1: Bare.Int })
+puts schema.to_s
+>>> "type Type2 {    t1: Type1\n    name: string\n}\ntype Type1 int\n" 
+```
+
+#### random generative testing
+This package can generate random schema with random binaries. This is useful if you're testing another bare implementation.
+```ruby
+schema, binary1, type_in_schema = Bare.generative_test
+puts schema
+==> 
+   type XZsLhtB7Q8n3e4 data
+   type McRM71 {    QJBfn8L54J4Mt4b0TFfZYB22NQ5W0636MM6M0gMVhMBM7d0U4Wrxj7Y3E6lu4Ze2Ftw1mu92: ATBAh2lMsHI8
+   QM: Ka
+   Ul83j2o4lZKq8rA: f32
+   BQUPwKc: u64
+   U9N: ZzhZ
+   }
+   type N7Vz7 f32
+   type Djv981Ym5 f64
+   type QG [30]data
+   type ZzhZ u8
+   type Ka i8
+   type B6vHGS2 [31]data
+   type EK0aM i32
+   type ATBAh2lMsHI8 data
+   type ZkCCc data
+# see pretty random (:
+puts type_in_schema
+==> :XZsLhtB7Q8n3e4
+
+ruby_object = Bare.decode(binary, schema, type_in_schema)
+binary2 = Bare.encode(ruby_object, schema,  type_in_schema)
+assert_equal binary, binary
+```
+
+
 
 # Exceptions
 ### BareException
