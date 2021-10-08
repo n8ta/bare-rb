@@ -133,7 +133,7 @@ The public interfaces are
 5. BareException (base exception class ONLY)
 6. Bare.Schema Bare.Int, Bare.Struct etc...
 7. The to_s method on schemas. Converts schema back into text format.
-   The exact text output for a given schema may without a major or minor version bump BUT the schemas will be equivalent.
+   The exact text output for a given schema may change without a major or minor version bump BUT the schemas will be equivalent.
 
 There are internal encode/decodes one each class like int and struct. They could change without notice. Use Bare.encode/decode.
 
