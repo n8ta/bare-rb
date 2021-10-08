@@ -1,4 +1,5 @@
 # bare-rb
+
 ![Build Status on Travis CI](https://api.travis-ci.com/n8ta/bare-rb.svg?branch=master)
 [![Coverage Status on Coveralls](https://coveralls.io/repos/github/n8ta/bare-rb/badge.svg?branch=master)](https://coveralls.io/github/n8ta/bare-rb?branch=master)
 
@@ -9,65 +10,12 @@
 
 Implementation of the [BARE message protocol](https://baremessages.org/) in Ruby
 
-[Rubygems](https://rubygems.org/gems/bare-rb) [Github](github.com/n8ta/bare-rb) [SourceHut](https://git.sr.ht/~n8ta/bare-rb)
-
-# Why bare?
-
-BARE is a simple efficient binary encoding. Its primary advantage over json
- is its structured nature and smaller messages sizes. Messages are smaller because they do not describe themselves (no key names). 
- This means the same message schema MUST be present on the sender and receiver.  
-
-BARE encoding is also quite a bit faster than json (2x+).
-Sadly this ruby implementation is about 20x slower than ruby's 
-built in json library since it is written in pure ruby whereas
-the json library is actually a C extension. If someone writes a C
-extension for bare it should be faster than ruby's json implementation.
-Another day perhaps.
-
-
-## JSON 381 bytes (283 minified)
-```json
-{
-  "name": "Martijn Braam",
-  "email": "spam@example.org",
-  "address":  {
-    "address": ["Address line 1", "", "", ""],
-    "city": "The big city",
-    "state": "Drenthe",
-    "country": "The Netherlands"
-  }
-,
-  "orders": [
-    { "orderId": 5, "quantity": 1 },
-    { "orderId": 6, "quantity": 2 }
-  ],
-  "metadata": {
-    "ssh": "some_key",
-    "gpg": "some_gpg_key?"
-  }
-}
-```
- 
-## Bare 143 bytes
-62% smaller (36% w/minifed json)
-
-```text
-bash-3.2$ xxd bin.bin
-00000000: 0e41 6464 7265 7373 206c 696e 6520 3100  .Address line 1.
-00000010: 0000 0c54 6865 2062 6967 2063 6974 7907  ...The big city.
-00000020: 4472 656e 7468 650f 5468 6520 4e65 7468  Drenthe.The Neth
-00000030: 6572 6c61 6e64 730d 4d61 7274 696a 6e20  erlands.Martijn
-00000040: 4272 6161 6d10 7370 616d 4065 7861 6d70  Braam.spam@examp
-00000050: 6c65 2e6f 7267 0205 0000 0000 0000 0001  le.org..........
-00000060: 0000 0006 0000 0000 0000 0002 0000 0002  ................
-00000070: 0373 7368 0873 6f6d 655f 6b65 7903 6770  .ssh.some_key.gp
-00000080: 670d 736f 6d65 5f67 7067 5f6b 6579 3f    g.some_gpg_key?
-```
-
 This implementation is complete but hasn't be rigorously tested for compatibility with another implementation. Please file an issue here on github if you find a bug.
 Feel free to submit a PR with your own fixes or improvements, just be sure to run the tests.
 
 # Installation
+[Rubygems](https://rubygems.org/gems/bare-rb) [Github](github.com/n8ta/bare-rb) [SourceHut](https://git.sr.ht/~n8ta/bare-rb)
+
 ```shell script
 # Install locally
 gem install bare-rb
