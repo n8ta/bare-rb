@@ -447,3 +447,34 @@ Occurs in many cases when the data provided to encode doesn't match the schema.
 
 ### InvalidBool
 Bools can only be encoded as a single byte of exactly 0x00 or 0x01. Anything else is an error. 
+
+### CircularSchema
+Your schema is infinitely large
+```bare
+type Type1 {
+  fielda: Type2
+}
+type Type2 {
+  fieldb: Type1
+  fieldc: u8,
+}
+```
+A schema can be recursive though. This is allowed
+```bare
+type Type1 {
+    fielda: Type2
+}
+type Type2 {
+    fieldb: option<Type1>
+    fieldc: u8,
+}
+```
+Since `fieldb` is optional the schema isn't a fixed size but can terminate.
+We essentially search your schema for a cycle with the following considered edges:
+1. References in struct fields
+2. Unions with a single variant
+3. Arrays types
+
+Maps are not included because they may have length 0.
+I think it's possible to create a union where both variants lead to the same type (thus the cycle is missed) but I haven't tested this yet. So it may
+not give the correct error.
