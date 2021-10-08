@@ -14,6 +14,7 @@ before_install:
   - gem install bundler -v 2.2.15
   - bundle
   - cd ..
+  - export GIT_SSL_NO_VERIFY=1
 
 
 jobs:
