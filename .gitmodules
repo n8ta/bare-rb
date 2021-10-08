@@ -1,0 +1,3 @@
+[submodule "tests/bare-py"]
+	path = tests/bare-py
+	url = https://git.sr.ht/~martijnbraam/bare-py
