@@ -17,7 +17,7 @@ This implementation is complete but hasn't be rigorously tested for compatibilit
 Feel free to submit a PR with your own fixes or improvements, just be sure to run the tests.
 
 # Installation
-[Rubygems](https://rubygems.org/gems/bare-rb) [Github](github.com/n8ta/bare-rb) [SourceHut](https://git.sr.ht/~n8ta/bare-rb)
+[Rubygems](https://rubygems.org/gems/bare-rb) [Github](https://github.com/n8ta/bare-rb) [SourceHut](https://git.sr.ht/~n8ta/bare-rb)
 ```shell script
 # Install locally
 gem install bare-rb
