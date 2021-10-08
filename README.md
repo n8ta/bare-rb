@@ -1,5 +1,4 @@
 # bare-rb
-
 ![Build Status on Travis CI](https://api.travis-ci.com/n8ta/bare-rb.svg?branch=master)
 [![Coverage Status on Coveralls](https://coveralls.io/repos/github/n8ta/bare-rb/badge.svg?branch=master)](https://coveralls.io/github/n8ta/bare-rb?branch=master)
 
@@ -10,12 +9,15 @@
 
 Implementation of the [BARE message protocol](https://baremessages.org/) in Ruby
 
+BARE is a simple efficient binary encoding. Its primary advantage over json
+ is its structured nature and smaller messages sizes. Messages are smaller because they do not describe themselves (no key names). 
+ This means the same message schema MUST be present on the sender and receiver. Messages are around 37%-60% smaller than json equivalents.
+
 This implementation is complete but hasn't be rigorously tested for compatibility with another implementation. Please file an issue here on github if you find a bug.
 Feel free to submit a PR with your own fixes or improvements, just be sure to run the tests.
 
 # Installation
 [Rubygems](https://rubygems.org/gems/bare-rb) [Github](github.com/n8ta/bare-rb) [SourceHut](https://git.sr.ht/~n8ta/bare-rb)
-
 ```shell script
 # Install locally
 gem install bare-rb
