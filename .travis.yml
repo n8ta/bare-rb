@@ -3,7 +3,7 @@ os: linux
 dist: focal
 before_install:
   - sudo apt-get update
-  - sudo apt-get install python3.8
+  - sudo apt-get install python3.8 python3-pip
   - python3 --version
   - python3 -m pip install setuptools
   - cd tests/bare-py
